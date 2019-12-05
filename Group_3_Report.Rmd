@@ -15,13 +15,12 @@ library(SASmarkdown)
 
 ## Introduction
 
-**To do**:  
+People who are diagnosed with diabetes are generally advised to control their diet and cut calories for their health (**To do**: insert a reference here). Do people in the US literally follow this guideline? 
 
-What your question is  
+We found this question very interesting and worth to study. Thus the substantive question our group is going to answer is: Do people diagnosed with diabetes consume less calories in the US?
 
-Why it is interesting  
+Our analysis plan is to use a Linear Mixed Model(LMM) analyzing the effect of diabetes diagnosis on consumption of total calories, controling over other related predictors. The LMM result can give us information over the calories intake difference among people with and without diabetes.
 
-What your analysis will show  
 
 
 ## Data  
