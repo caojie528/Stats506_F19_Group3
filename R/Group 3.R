@@ -1,3 +1,11 @@
+## Group project - R
+##
+## Question: Do people diagnosed with diabetes consume less calories in the US?
+##
+## Author: Bei An (anbei@umich.edu)
+## Updated: Dec 5, 2019
+# 80: -------------------------------------------------------------------------
+
 # set up
 library(foreign)
 library(tidyr)
@@ -5,8 +13,6 @@ library(plyr)
 library(dplyr)
 library(corrplot)
 library(lme4)
-
-# Question: Do people diagnosed with diabetes consume less calories in the US?
 
 # prepare datasets
 DEMO = read.xport("DEMO_I.XPT")
@@ -38,13 +44,13 @@ dm = dm[-which(dm$DIQ010 %notin% c), ]
 dm = dm[-which(dm$pregnancy==1), ]
 
 # create a new variable representing diabetes
-  # 1 - diabetes or borderline
-  # 0 - non-diabetes
+# 1 - diabetes or borderline
+# 0 - non-diabetes
 dm$diabetes = ifelse(dm$DIQ010==2, 0, 1)
 
 # create a new variable representing male
-  # 1 - male
-  # 0 - female
+# 1 - male
+# 0 - female
 dm$male = ifelse(dm$gender==1, 1, 0)
 
 # pivot the data into "long" format
@@ -62,14 +68,15 @@ dm = dm %>%
 # check for missing values for each variable
 colSums(is.na(dm))
 
-# `vig_work` and `mod_work` have much more missing values than other variables, so it is
-# reasonable to remove them from the data frame.  
-# `pregnancy` can also be removed since we only need this variable to filter out pregnant
-# individuals.  
+# `vig_work` and `mod_work` have much more missing values than other variables,
+# so it is reasonable to remove them from the data frame.  
+# `pregnancy` can also be removed since we only need this variable 
+# to filter out pregnant individuals.  
 # `DIQ010` and `gender` are now redundant due to the new variables.  
 
-# Note that `age` is top-coded at 80, which means participants aged 80 or older were all
-# recorded as age 80. To avoid inaccurate data, we decided to set an age bound from 12 to 79.
+# Note that `age` is top-coded at 80, which means 
+# participants aged 80 or older were all recorded as age 80. 
+# To avoid inaccurate data, we decided to set an age bound from 12 to 79.
 
 dm = dm %>%
   select(-pregnancy, -vig_work, -mod_work, -DIQ010, -gender) %>%
@@ -86,7 +93,8 @@ dr2_final = dm_final[dm_final$day==2,]
 hist(dm_final[dm_final$day==1, ]$kcal, main = "Day 1")
 # day2
 hist(dm_final[dm_final$day==2, ]$kcal, main = "Day 2")
-# `kcal` seems to be approximately normal with a longer right tail for both day1 and day2.
+# `kcal` seems to be approximately normal with a longer right tail 
+# for both day1 and day2.
 # In this case, no transformation would be needed.
 
 # fit a linear regression model
@@ -99,5 +107,6 @@ corrplot(cor(dr1_final))
 # No collinearity found.
 
 # fit a linear mixed model
-model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + diabetes + male + (1|SEQN))
+model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + 
+                             diabetes + male + (1|SEQN))
 summary(model2)
