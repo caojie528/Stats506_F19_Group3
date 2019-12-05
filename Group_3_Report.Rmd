@@ -382,7 +382,7 @@ plt.show()
 ```
 
 
-<!-- ![png](Group_project_stats506_files/Group_project_stats506_3_0.png) -->
+![png](./Python/Group_project_stats506_files/Group_project_stats506_3_0.png)
 
 
 
@@ -393,7 +393,7 @@ plt.show()
 ```
 
 
-<!-- ![png](Group_project_stats506_files/Group_project_stats506_4_0.png) -->
+![png](./Python/Group_project_stats506_files/Group_project_stats506_4_0.png)
 
 
 
