@@ -119,7 +119,7 @@ final_day2 = final[final["day"] == 2]
 ```python
 # check linearity for final_day1
 plt.hist(final_day1["y"])
-plt.savefig('Group_3.0.png')
+plt.savefig('Group_project_stats506_3_0.png')
 plt.show()
 ```
 
@@ -131,6 +131,7 @@ plt.show()
 ```python
 # check linearity for final_day1
 plt.hist(final_day2["y"])
+plt.savefig('Group_project_stats506_4_0.png')
 plt.show()
 ```
 
