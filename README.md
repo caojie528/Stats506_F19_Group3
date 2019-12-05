@@ -10,9 +10,9 @@ Wenjing Li (lwenjing@umich.edu)
 Do people diagnosed with diabetes consume less calories in the U.S.? 
 
 ## Softwares/Tools
-R - Bei An
-SAS - Jie Cao
-Python - Wenjing Li
+R - Bei An  
+SAS - Jie Cao  
+Python - Wenjing Li  
 
 ## To Do
 Code review to make analysis parallel and consistent
