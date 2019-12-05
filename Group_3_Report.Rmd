@@ -1,0 +1,126 @@
+---
+title: "Group_3_Report"
+author: "Bei An, Jie Cao, Wenjing Li"
+date: "`r format.Date(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+**To do**:  
+
+What your question is  
+
+Why it is interesting  
+
+What your analysis will show  
+
+
+## Data  
+
+We used the National Health and Nutrition Examination Survey (NHANES) [2015-2016](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2015) data, which is publicly available on Centers for Disease Control and Prevention (CDC) website.   
+
+The datasets and variables we used for our research question are summarized below:  
+
+Dataset | Dataset Description | Variable name | Variable Description | Variable type  
+------------- | ------------ | ------------- | ------------| -------------
+Every dataset listed below | | SEQN | Respondent<br> sequence number | Numeric  
+[**Demographics data**](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&CycleBeginYear=2015) | | | 
+DEMO_I | Demographics | RIDAGEYR | Age in years at screening | Numeric 
+DEMO_I | Demographics | RIAGENDR | Gender | Numeric 
+DEMO_I | Demographics | RIDEXPRG | Pregnancy status at exam | Numeric 
+[**Dietary data**](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Dietary&CycleBeginYear=2015) | | |
+DR1TOT_I | Total Nutrient Intakes<br> First Day | DR1TKCAL | Energy (kcal) | Numeric
+DR2TOT_I | Total Nutrient Intakes<br> Second Day |DR2TKCAL | Energy (kcal) | Numeric
+[**Examination data**](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&CycleBeginYear=2015) | | |
+BMI_I | Body Measurement | BMXBMI | Body Mass Index (kg/m$^2$) | Numeric
+[**Questionnaire data**](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Questionnaire&CycleBeginYear=2015) | | |
+DIQ_I | Diabetes | DIQ010 | Doctor told you have diabetes | Numeric
+PAQ_I | Physical Activity | PAD615 | Minutes vigorous-intensity work | Numeric
+PAD_I | Physical Activity | PAD630 | Minutes moderate-intensity work | Numeric
+PAD_I | Physical Activity | PAD680 | Minutes sedentary activity | Numeric
+
+
+
+## Methods  
+
+We fitted a linear mixed model to analyze the effect of diabetes diagnosis on consumption of total calories from both interview days, controlling for demographics, BMI and physical activity, and including a random intercept for each respondent. Below we provide details in each step: 
+
+1. Data merging  
+
+XPT files needed for the analysis were downloaded from the CDC website. Different datasets were merged into one using SEQN (respondent sequence number), and only variables we listed in the above data section were included in the merged data.  
+
+We have a merged dataset for day 1 only, one for day 2 only, and another one with day 1 and day 2 data stacked together.  
+
+2. Inclusion/exclusion criteria  
+
+Respondents with unknown diabetes are excluded from analysis.  
+
+Respondents with confirmed pregnancy (RIDEXPRG) were excluded from our analysis.  
+
+Ages over 89 are considered protected health infomration (PHI). Therefore, NHANES data top-coded age variable at 80 years old, which means respondents aged 80 or more were all recorded as 80 in NHANES data. Therefore, we only include respondents aged 12 to 79 in our analysis.  
+
+3. Variable recoding  
+
+We created a new binary *diabetes* variable, where respondents with diabetes diagnosis or borderline diagnosis are both considered positive (1)  in this new variable, and respondents with confirmed non-diabetes diagnosis are considered negative (0).  
+
+We recoded the two-level (1 vs 2) gender variable to a new *male* variable, where 1 indicates male, and 0 indicates female.  
+
+We added a *day* variable to indicate the dietary interview day.  
+
+4. Missing pattern checks
+Missingness of each variable was checked in our analysis. Variable with large proportion of missing was furthre excluded from our analysis. Observations with missing in any of the variables we are going to use were deleted from the working dataset.  
+
+5. Normality examination  
+
+We checked the normality of our response variable - total energy (kcal), by interview day, and discussed the necessity of transformation.  
+
+6. Multicollinearity inspection  
+
+The correlation matrix of predictors were examined. 
+
+We then fitted a simple linear regression model using day 1 data only, and examined the variance inflation factor (VIF) to assess collinearity.  
+
+Predictors were the selected based on the multicollinearity inspection results.
+
+7. Model fitting  
+
+We used both days' data to then fit a linear mixed model, including a random intercept for each respondent. 
+
+**To do:** obtain marginal effects  
+
+
+The data preparation, model checking and model fitting were performed parallel in R, SAS, and Python. 
+
+
+## Core Analysis {.tabset .tabset-fade .tabset-pills}
+
+### R 
+
+### SAS 
+
+### Python 
+
+
+## Additional Analysis  
+
+**To do**: 
+Tables? Figures? 
+
+
+## Results  
+
+**To do**: 
+
+What is the answer to your question?  
+
+What did you learn about the data?  
+
+## Discussion  
