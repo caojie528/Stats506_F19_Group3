@@ -118,7 +118,7 @@ ggplot(dr2_final, aes(x = kcal)) +
 # In this case, no transformation would be needed.
 
 # fit a linear regression model for day 1
-model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + diabetes + male)
+model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes) + factor(male))
 # check collinearity
 summary(model)
 faraway::vif(model)
@@ -128,7 +128,8 @@ corrplot(cor(dr1_final))
 
 # fit a linear mixed model
 model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + 
-                             diabetes + male + (1|SEQN))
+                             factor(diabetes) + factor(male) + (1|SEQN))
 summary(model2)
 
 # To do: marginal effect
+
