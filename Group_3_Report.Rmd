@@ -10,7 +10,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(SASmarkdown)
 ```
 
 ## Introduction
@@ -65,7 +64,7 @@ Respondents with unknown diabetes are excluded from analysis.
 
 Respondents with confirmed pregnancy (RIDEXPRG) were excluded from our analysis.  
 
-Ages over 89 are considered protected health infomration (PHI). Therefore, NHANES data top-coded age variable at 80 years old, which means respondents aged 80 or more were all recorded as 80 in NHANES data. Therefore, we only include respondents aged 12 to 79 in our analysis.  
+Ages over 89 are considered protected health infomration (PHI). Therefore, NHANES data top-coded age variable at 80 years old, which means respondents aged 80 or more were all recorded as 80 in NHANES data. Therefore, we only include adolescent and adult respondents aged 12 to 79 in our analysis.  
 
 3. Variable recoding  
 
@@ -99,12 +98,7 @@ We used both days' data to then fit a linear mixed model, including a random int
 
 The data preparation, model checking and model fitting were performed parallel in R, SAS, and Python. 
 
-
 ## Core Analysis {.tabset .tabset-fade .tabset-pills}
-
-**To do**:
-
-We will do code review later.  
 
 ### R 
 ```{r setup_r, include=FALSE}
@@ -114,8 +108,9 @@ library(plyr)
 library(dplyr)
 library(corrplot)
 library(lme4)
+library(ggplot2)
 ```
-Question: Do people diagnosed with diabetes consume less calories in the US?
+**Question: Do people diagnosed with diabetes consume less calories in the US?**
 
 ```{r, warning=FALSE}
 DEMO = read.xport("./Data/DEMO_I.XPT")
@@ -218,9 +213,25 @@ dr2_final = dm_final[dm_final$day==2,]
 ```{r, warning=FALSE}
 # check if the response variable - kcal is normally distributed
 # day1
-hist(dm_final[dm_final$day==1, ]$kcal, main = "Day 1")
+ggplot(dr1_final, aes(x = kcal)) + 
+  geom_histogram(aes(y = ..density..), 
+                 bins = 100, 
+                 fill = "blue", 
+                 alpha = 0.8) + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(dr1_final$kcal), 
+                            sd = sd(dr1_final$kcal))) + 
+  theme_bw()
 # day2
-hist(dm_final[dm_final$day==2, ]$kcal, main = "Day 2")
+ggplot(dr2_final, aes(x = kcal)) + 
+  geom_histogram(aes(y = ..density..), 
+                 bins = 100, 
+                 fill = "blue", 
+                 alpha = 0.8) + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(dr2_final$kcal), 
+                            sd = sd(dr2_final$kcal))) + 
+  theme_bw()
 ```
 
 ```
@@ -230,7 +241,8 @@ In this case, no transformation would be needed.
 
 ```{r, warning=FALSE}
 # fit a linear regression model
-model = dm_final %>% lm(formula = kcal ~ age + sed_act + bmi + diabetes + male)
+model = dr1_final %>% 
+  lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes) + factor(male))
 # check collinearity
 summary(model)
 faraway::vif(model)
@@ -244,16 +256,365 @@ No collinearity found.
 
 ```{r, warning=FALSE}
 # fit a linear mixed model
-model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + diabetes + male + (1|SEQN))
+model2 = dm_final %>% 
+  lmer(formula = kcal ~ age + sed_act + bmi + factor(diabetes) + factor(male) + (1|SEQN))
 summary(model2)
 ```
 
+
 ### SAS 
-```{r, echo = FALSE}
-cat("```SAS\n")
-writeLines(readLines("./SAS/dm_cal_lmm.sas"))
-cat("```")
+```sas
+/******************************************************************************/
+* Stats 506, Fall 2019														   ;
+* Group Project - Group 3													   ;
+*------------------------------------------------------------------------------;
+* This script analyzes the question:										   ;
+* 	"Do people diagnosed with diabetes consume less calories in US?"		   ;
+* NHANES 2015-2016 data are used in this problem. 							   ;
+* The script has following parts to complete the task:						   ;
+* A. Merge source data														   ;
+* 	 Merge information from:												   ;
+*		Demographics - subject ID, age, gender								   ;
+*		Dietary - subject ID, total calories (day 1), total calories (day 2)   ;
+*		Examination - subject ID, BMI										   ;
+*	    Questionnaire - subject ID, diabetes, pregnancy						   ;
+*					  - vigorous/moderate/sedentary activity minutes		   ;
+* B. Check missing patterns													   ;
+*	 Check missing patterns of all variables								   ;
+*	 Take a closer look at three physical activity variables				   ; 
+* C. Handle top-coded age													   ;
+*	 NHANES data top-coded age at 80 and above. 							   ;
+*	 Choose a method to handle it appropriately.							   ;
+* D. Transformation of response variable									   ;
+*	 Examine the normality of response variable								   ;
+*	 Determine whether a transformation is needed							   ;
+* E. Initial model to examine collinearity - use Day 1 only					   ;
+*	 Use day 1 data only to fit a linear regressio model					   ;
+*	 Determine if multicollinearity issue exists							   ;
+*	 If yes, handle if appropriately										   ;
+* F. Linear mixed model to account for both day 1 and day 2					   ;
+*	 Fit a linear mixed model to include both days data						   ;
+*	 Include a random intercept for each subject							   ;
+*------------------------------------------------------------------------------;
+* Author: Jie Cao (caojie@umich.edu)										   ;
+* Last updated on: Dec 3, 2019												   ;
+/******************************************************************************/
+
+
+* 80: -------------------------------------------------------------------------;
+
+
+/* Data directory ----------------------------------------------------------- */
+* List of XPT data downloaded from 2015 - 2016 NHANES;
+libname DEMO xport "M:\506\data\XPT\DEMO_I.XPT"; 
+libname DIQ xport "M:\506\data\XPT\DIQ_I.XPT";
+libname PAQ xport "M:\506\data\XPT\PAQ_I.XPT";
+libname DR1 xport "M:\506\data\XPT\DR1TOT_I.XPT";
+libname DR2 xport "M:\506\data\XPT\DR2TOT_I.XPT";
+libname BMX xport "M:\506\data\XPT\BMX_I.XPT";
+
+* Directory to save datasets extracted from XPT files; 
+libname NH "M:\506\data\SAS"; 
+
+
+/* Extract XPT files and save as SAS datasets ------------------------------- */
+proc copy in = DEMO out = NH;
+run;
+proc copy in = DIQ out = NH;
+run;
+proc copy in = PAQ out = NH;
+run;
+proc copy in = DR1 out = NH;
+run;
+proc copy in = DR2 out = NH;
+run;
+proc copy in = BMX out = NH;
+run;
+
+
+/* Formats ------------------------------------------------------------------- */
+proc format;
+	/* A format to flag numeric varibles with missing status */
+	value missfmt 
+		. = "Missing" 
+		other = "Non-missing";
+	/* Gender format */
+	value male
+		0 = "Female"
+		1 = "Male";
+run;
 ```
+
+
+```sas
+/* Prepare working data ------------------------------------------------------ */
+
+***************************;
+* A. Merge source data     ;
+****************************
+
+* Dietary day 1 interview plus needed variables;
+proc sql;
+	create table dr1 as
+	select dm.SEQN as subject,
+		   1 as day,   
+			(case 
+			 /* DIQ010 = 2: doctor confirmed no diabetes */ 
+			 when dm.DIQ010 = 2 then 0 
+			 /* DIQ010 = 1 or 3: doctor confirmed diabetes (1) or borderline (3) */
+			 else 1
+			 end) as diabetes, 
+		   demo.RIDAGEYR as ageyr , 
+			(case
+			 when demo.RIAGENDR = 1 then 1 
+			 when demo.RIAGENDR = 2 then 0 
+			 else .
+			 end) as male format male., 
+		   bm.BMXBMI as bmi, 
+		   pa.PAD615 as vigorous_min, 
+		   pa.PAD630 as moderate_min, 
+		   pa.PAD680 as sedentary_min, 
+		   dr1.DR1TKCAL as tot_cal
+		    
+	from NH.Diq_i dm 
+	left join NH.Demo_i demo on dm.SEQN = demo.SEQN
+	left join NH.Bmx_i bm on dm.SEQN = bm.SEQN
+	left join NH.Paq_i pa on dm.SEQN = pa.SEQN
+	left join NH.Dr1tot_i dr1 on dm.SEQN = dr1.SEQN
+	
+	/* Include subjects with known answers to diabete diagnosis &
+	   exclude participants confirmed with pregnancy */
+	where dm.DIQ010 in (1, 2, 3) and demo.RIDEXPRG NE 1;
+quit;
+```
+
+NOTE: Table WORK.DR1 created, with 9501 rows and 10 columns.
+
+```sas
+* Dietary day 2 interview plus needed variables; 
+proc sql;
+	create table dr2 as
+	select dm.SEQN as subject,
+		   2 as day,   
+			(case 
+			 /* DIQ010 = 2: doctor confirmed no diabetes */ 
+			 when dm.DIQ010 = 2 then 0 
+			 /* DIQ010 = 1 or 3: doctor confirmed diabetes (1) or borderline (3) */
+			 else 1
+			 end) as diabetes, 
+		   demo.RIDAGEYR as ageyr,  
+			(case
+			 when demo.RIAGENDR = 1 then 1 
+			 when demo.RIAGENDR = 2 then 0 
+			 else .
+			 end) as male format male.,  
+		   bm.BMXBMI as bmi, 
+		   pa.PAD615 as vigorous_min, 
+		   pa.PAD630 as moderate_min, 
+		   pa.PAD680 as sedentary_min, 
+		   dr2.DR2TKCAL as tot_cal
+		    
+	from NH.Diq_i dm 
+	left join NH.Demo_i demo on dm.SEQN = demo.SEQN
+	left join NH.Bmx_i bm on dm.SEQN = bm.SEQN
+	left join NH.Paq_i pa on dm.SEQN = pa.SEQN
+	left join NH.Dr2tot_i dr2 on dm.SEQN = dr2.SEQN
+
+	/* Include subjects with known answers to diabete diagnosis &
+	   exclude participants confirmed with pregnancy */
+	where dm.DIQ010 in (1, 2, 3) and demo.RIDEXPRG NE 1;
+quit;
+```
+
+NOTE: Table WORK.DR2 created, with 9501 rows and 10 columns.
+
+```sas
+* Combine two days' data; 
+proc sql;
+	create table dm_cal as
+	select * 
+	from dr1 
+	outer union corr
+	select * 
+	from dr2
+	order by subject, day;
+quit;
+```
+
+NOTE: Table WORK.DM_CAL created, with 19002 rows and 10 columns.
+
+```sas
+**********************************************;
+* B. Check missing patterns 				  ;
+**********************************************;
+
+* Add variables to count number of missing; 
+data check;
+	set dm_cal;
+	/* Number of missing among three physical activity minutes 
+	   for each participant */
+	mins_miss = cmiss(of vigorous_min--sedentary_min);
+	/* Number of missing among all (numeric) variables we may 
+	   potentially use for each participant */
+	nmiss = cmiss(of diabetes--tot_cal);
+run;
+* Tabulate number of missing;
+proc sort data = check;
+	by day;
+run;
+proc freq data = check;
+	tables mins_miss nmiss;
+	by day;
+run;
+```
+
+1064 (11.2%) have complete three physical activity minutes data, both day 1 and day 2; 
+
+979 (10.3%) have complete all numeric data for day 1;
+
+801 (8.4%) have complete all numeric data for day 2;  
+
+```sas
+* Check missing patterns for numeric variables we are interested in;
+proc freq data = check;
+	format diabetes--tot_cal missfmt.; 
+	tables diabetes--tot_cal / missing missprint nocum;
+	by day;
+run;
+```
+No missing in diabetes (by nature of merging process), age, gender; 
+
+BMI: 818 (8.6%) missing in both day 1 and day 2;  
+
+Vigorous_min: 8156 (85.8%) missing in both day 1 and day 2;  
+
+Moderate_min: 6942 (73.1%) missing in both day 1 and day 2;
+
+Sedentary_min: 2624 (27.6%) missing in both day 1 and day 2; 
+
+tot_cal: 1452 (15.3%) missing in day 1, 2862 (30.1%) in day 2;  
+
+**Conclusion**: we decide not to use vigorous activity minutes and moderate activity minutes due to large amount of missing. 
+
+```sas
+********************************;
+* C. Handle top-coded age	    ;
+********************************;
+/* NHANES top-coded age variable at 80 years, therefore, we consider recode age 
+   into age groups. */ 
+data dm_cal;
+	set dm_cal;
+	/* Restrict to age 12+ */
+	where 12 <= ageyr < 80;
+run;
+```
+
+NOTE: There were 13172 observations read from the data set WORK.DM_CAL.
+      WHERE (ageyr>=12 and ageyr<80);
+      
+NOTE: The data set WORK.DM_CAL has 13172 observations and 10 variables.
+
+```sas
+*******************************************
+* D. Transformation of response variable  ;
+******************************************;
+/* Examine the distribution of response variable */
+proc univariate data = dm_cal;
+	var tot_cal;
+	histogram tot_cal / normal;
+	class day;
+run;
+```
+
+<div align=center> 
+![](SAS/Figs/hist_tot_cal.PNG)
+</div>
+
+**Conclusion**: The response variable (total energy) approximately follows normal distribution, thus, no transformation is needed. 
+
+```sas 
+/* Modeling ----------------------------------------------------------------- */
+
+************************************************************;
+* E. Initial model to examine collinearity - use Day 1 only ;
+************************************************************;
+data dm_cal_final dr1_final dr2_final;
+	set dm_cal(drop = vigorous_min moderate_min);
+	/* Remove observations with missing in any of the variables*/
+	if cmiss(of _all_) then delete;
+	
+	/* Output two day's, day 1 only and day 2 only data */
+	output dm_cal_final;
+	if day = 1 then output dr1_final;
+	if day = 2 then output dr2_final;
+run;
+```
+
+NOTE: There were 13172 observations read from the data set WORK.DM_CAL.
+
+NOTE: The data set WORK.DM_CAL_FINAL has 10528 observations and 8 variables.
+
+NOTE: The data set WORK.DR1_FINAL has 5752 observations and 8 variables.
+
+NOTE: The data set WORK.DR2_FINAL has 4776 observations and 8 variables.
+
+
+```sas 
+/* Examine the correlation matrix */
+proc corr data = dr1_final;
+	var diabetes ageyr male bmi sedentary_min;
+run;
+```
+
+<div align=center> 
+![](SAS/Figs/corr_day1.PNG)
+</div>
+
+
+Above is the correlation matrix for the five predictors we picked. We want to check if any of the variables included have a high correlation - about 0.8 or higher - with any other variable. Upon review of this correlation matrix, there does not appear to be any pair of variable with a particular high correlation. 
+
+```sas
+/* Multicollinearity Investigation of VIF */
+proc reg data = dr1_final;
+	model tot_cal = diabetes ageyr male bmi sedentary_min / vif tol collin; 
+run; 
+```
+
+<div align=center> 
+![](SAS/Figs/ols_day1_1.PNG)
+
+![](SAS/Figs/ols_day1_2.PNG)
+</div>
+
+Next, we fit an ordinary linear regression model. In the above results, we check Variance Inflation Factor (VIF) or Tolerance (1/VIF) for potential multicollinearity. VIF greater than 10 or Tolerance less than 0.1 should be warned if exists. Obviously, there is no treat of multicollinearity indicated in our model. 
+
+We further look at the collinearity diagnostics (eigenvalues and condition numbers). If one or more of the eigenvalues are small (close to zero) and the corresponding condition number being large, then we have an indication of multicollinearity. As we can see from the above results, none of our eigenvalues and condition index associations match this description. 
+
+**Conclusion**: No multicollinearity issue found in our model. 
+
+```sas
+************************************************************;
+* F. Linear mixed model to account for both day 1 and day 2 ;
+************************************************************;
+proc mixed data = dm_cal_final;
+	model tot_cal = diabetes ageyr male bmi sedentary_min / s;
+	random intercept / subject = subject;
+	lsmeans diabetes male / at means;
+run;
+
+
+* 80: -------------------------------------------------------------------------;
+```
+
+<div align=center> 
+![](SAS/Figs/lmm_1.PNG)
+
+![](SAS/Figs/lmm_2.PNG)
+
+![](SAS/Figs/lmm_3.PNG)
+
+![](SAS/Figs/lmm_4.PNG)
+</div>
 
 
 
@@ -510,180 +871,28 @@ print(mixed_fit.summary())
 
 
 
-```python
-mixed_fit.random_effects
-```
-
-
-
-
-    {83752.0: Group    714.014326
-     dtype: float64, 83781.0: Group    218.054765
-     dtype: float64, 83857.0: Group    136.60615
-     dtype: float64, 83959.0: Group   -550.314443
-     dtype: float64, 84033.0: Group   -79.760159
-     dtype: float64, 84073.0: Group    562.812273
-     dtype: float64, 84130.0: Group   -355.544879
-     dtype: float64, 84187.0: Group   -210.096806
-     dtype: float64, 84192.0: Group   -344.604582
-     dtype: float64, 84412.0: Group    8.118748
-     dtype: float64, 84440.0: Group   -381.40279
-     dtype: float64, 84547.0: Group   -155.45698
-     dtype: float64, 84587.0: Group    194.945027
-     dtype: float64, 84716.0: Group    96.785213
-     dtype: float64, 84766.0: Group   -152.005506
-     dtype: float64, 84797.0: Group    1511.578945
-     dtype: float64, 84816.0: Group   -0.664801
-     dtype: float64, 84825.0: Group    89.080769
-     dtype: float64, 84937.0: Group    161.108954
-     dtype: float64, 85040.0: Group   -93.508833
-     dtype: float64, 85055.0: Group    349.567852
-     dtype: float64, 85132.0: Group   -305.468962
-     dtype: float64, 85160.0: Group    39.245748
-     dtype: float64, 85222.0: Group    236.712323
-     dtype: float64, 85309.0: Group    248.162962
-     dtype: float64, 85343.0: Group   -509.875522
-     dtype: float64, 85515.0: Group   -469.712628
-     dtype: float64, 85659.0: Group    1138.40668
-     dtype: float64, 85676.0: Group    678.179722
-     dtype: float64, 85696.0: Group   -717.05304
-     dtype: float64, 85787.0: Group    575.344502
-     dtype: float64, 85915.0: Group   -583.993194
-     dtype: float64, 85936.0: Group   -492.497505
-     dtype: float64, 85948.0: Group   -167.173206
-     dtype: float64, 86022.0: Group   -264.348461
-     dtype: float64, 86029.0: Group   -54.685422
-     dtype: float64, 86189.0: Group    683.036407
-     dtype: float64, 86262.0: Group    278.254524
-     dtype: float64, 86322.0: Group   -204.938091
-     dtype: float64, 86461.0: Group    312.717254
-     dtype: float64, 86490.0: Group   -377.055662
-     dtype: float64, 86528.0: Group   -345.910279
-     dtype: float64, 86600.0: Group    156.838753
-     dtype: float64, 86611.0: Group   -81.519336
-     dtype: float64, 86632.0: Group    636.09565
-     dtype: float64, 86761.0: Group    13.277571
-     dtype: float64, 86968.0: Group    44.50787
-     dtype: float64, 86981.0: Group   -30.553453
-     dtype: float64, 87005.0: Group    176.754849
-     dtype: float64, 87046.0: Group    197.183121
-     dtype: float64, 87066.0: Group    718.380519
-     dtype: float64, 87130.0: Group    262.78048
-     dtype: float64, 87171.0: Group   -365.31923
-     dtype: float64, 87200.0: Group    311.313816
-     dtype: float64, 87243.0: Group   -359.342715
-     dtype: float64, 87346.0: Group   -572.494736
-     dtype: float64, 87423.0: Group   -550.337855
-     dtype: float64, 87427.0: Group    107.663298
-     dtype: float64, 87473.0: Group   -44.58847
-     dtype: float64, 87501.0: Group    414.740938
-     dtype: float64, 87520.0: Group   -73.164355
-     dtype: float64, 87636.0: Group   -194.083515
-     dtype: float64, 87802.0: Group   -92.607756
-     dtype: float64, 87808.0: Group   -146.476724
-     dtype: float64, 87845.0: Group   -373.510281
-     dtype: float64, 87892.0: Group    489.839415
-     dtype: float64, 87895.0: Group   -390.494126
-     dtype: float64, 87942.0: Group   -392.209017
-     dtype: float64, 88072.0: Group   -394.701329
-     dtype: float64, 88082.0: Group    336.74161
-     dtype: float64, 88147.0: Group   -416.693601
-     dtype: float64, 88205.0: Group   -64.438246
-     dtype: float64, 88333.0: Group   -181.612475
-     dtype: float64, 88412.0: Group    381.73585
-     dtype: float64, 88440.0: Group    389.22565
-     dtype: float64, 88451.0: Group    339.779095
-     dtype: float64, 88504.0: Group    442.186858
-     dtype: float64, 88507.0: Group   -673.367181
-     dtype: float64, 88540.0: Group    605.596895
-     dtype: float64, 88570.0: Group   -403.536666
-     dtype: float64, 88583.0: Group   -438.528456
-     dtype: float64, 88632.0: Group    75.008079
-     dtype: float64, 88674.0: Group   -586.50933
-     dtype: float64, 88707.0: Group   -558.201297
-     dtype: float64, 88720.0: Group    87.970199
-     dtype: float64, 88786.0: Group   -249.136366
-     dtype: float64, 88868.0: Group    281.690192
-     dtype: float64, 88892.0: Group   -88.3253
-     dtype: float64, 88970.0: Group   -47.402054
-     dtype: float64, 89160.0: Group   -448.346747
-     dtype: float64, 89233.0: Group    42.706284
-     dtype: float64, 89362.0: Group    348.886368
-     dtype: float64, 89453.0: Group   -31.18674
-     dtype: float64, 89474.0: Group   -336.343452
-     dtype: float64, 89659.0: Group   -83.884884
-     dtype: float64, 89823.0: Group   -347.228356
-     dtype: float64, 89833.0: Group   -237.332797
-     dtype: float64, 89854.0: Group    561.270842
-     dtype: float64, 89929.0: Group   -133.058818
-     dtype: float64, 89980.0: Group    310.033335
-     dtype: float64, 90020.0: Group    404.522018
-     dtype: float64, 90074.0: Group   -58.219194
-     dtype: float64, 90189.0: Group   -97.953465
-     dtype: float64, 90398.0: Group   -164.116793
-     dtype: float64, 90461.0: Group   -34.15224
-     dtype: float64, 90463.0: Group   -5.077516
-     dtype: float64, 90494.0: Group   -114.910465
-     dtype: float64, 90516.0: Group    384.055122
-     dtype: float64, 90547.0: Group   -568.2198
-     dtype: float64, 90573.0: Group    488.537931
-     dtype: float64, 90627.0: Group   -753.197529
-     dtype: float64, 90804.0: Group    321.643389
-     dtype: float64, 90966.0: Group    219.392462
-     dtype: float64, 90994.0: Group   -60.076761
-     dtype: float64, 91078.0: Group   -670.218994
-     dtype: float64, 91091.0: Group    82.73983
-     dtype: float64, 91101.0: Group    107.132758
-     dtype: float64, 91113.0: Group    1000.538565
-     dtype: float64, 91139.0: Group    276.856001
-     dtype: float64, 91204.0: Group    532.575261
-     dtype: float64, 91249.0: Group   -192.087851
-     dtype: float64, 91324.0: Group    99.021472
-     dtype: float64, 91336.0: Group   -235.33189
-     dtype: float64, 91358.0: Group   -175.056167
-     dtype: float64, 91724.0: Group   -495.84074
-     dtype: float64, 91826.0: Group    556.551694
-     dtype: float64, 91835.0: Group   -332.41481
-     dtype: float64, 91893.0: Group   -443.260514
-     dtype: float64, 91916.0: Group   -578.614068
-     dtype: float64, 91922.0: Group   -135.215927
-     dtype: float64, 91993.0: Group    382.422285
-     dtype: float64, 91997.0: Group   -88.97439
-     dtype: float64, 91999.0: Group    284.130785
-     dtype: float64, 92190.0: Group   -561.968772
-     dtype: float64, 92225.0: Group    141.469799
-     dtype: float64, 92300.0: Group   -182.623942
-     dtype: float64, 92423.0: Group    216.453842
-     dtype: float64, 92428.0: Group    686.550434
-     dtype: float64, 92478.0: Group    216.045579
-     dtype: float64, 92506.0: Group   -630.770357
-     dtype: float64, 92545.0: Group   -96.402139
-     dtype: float64, 92551.0: Group    640.640992
-     dtype: float64, 92657.0: Group    19.039244
-     dtype: float64, 92761.0: Group   -73.781813
-     dtype: float64, 92767.0: Group    64.327762
-     dtype: float64, 93123.0: Group    414.336505
-     dtype: float64, 93213.0: Group   -162.775118
-     dtype: float64, 93222.0: Group    212.973539
-     dtype: float64, 93305.0: Group   -2.255547
-     dtype: float64, 93392.0: Group   -269.232823
-     dtype: float64, 93483.0: Group    422.638117
-     dtype: float64, 93524.0: Group    257.480725
-     dtype: float64, 93600.0: Group   -258.58231
-     dtype: float64, 93606.0: Group   -511.249068
-     dtype: float64, 93665.0: Group   -241.828374
-     dtype: float64}
-
-
-
-## Additional Analysis  
-
-**To do**: 
-Tables? Figures? 
-
-
 ## Results  
 
 The linear regression model gave a decent fit to the data, but the percentage that this model was able to explain was rather low. The linear mixed model (LMM), on the other hand, generated in SAS and R, seems to be a better choice for regression analysis. Our LMM showed that the predictor variables of interest are all statistically significant, suggesting that all of these predictors are very likely to have an effect on the response variable. However, before drawing any conclusion, we still need to perform analysis on marginal effects, and we need to take a closer look at our Python section and figure out how to match it with the models in R and SAS. If the final steps agree with our previous analysis, then we can conclude that people diagnosed with diabetes consume less calories in the US.  
 
+
 ## Discussion  
+
+1. Multicollinearity warning in Python
+
+
+2. Marginal Effect at the Mean difference
+
+
+
+## Reference
+
+1. [Diabetes calorie consumption]
+
+2. [R lmer4]
+
+3. [SAS proc mixed]
+
+4. [Python lmm]
+
+
