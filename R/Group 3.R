@@ -15,12 +15,12 @@ library(corrplot)
 library(lme4)
 
 # prepare datasets
-DEMO = read.xport("DEMO_I.XPT")
-DIQ = read.xport("DIQ_I.XPT")
-PAQ = read.xport("PAQ_I.XPT")
-DR1 = read.xport("DR1TOT_I.XPT")
-DR2 = read.xport("DR2TOT_I.XPT")
-BMX = read.xport("BMX_I.XPT")
+DEMO = read.xport("../Data/DEMO_I.XPT")
+DIQ = read.xport("../Data/DIQ_I.XPT")
+PAQ = read.xport("../Data/PAQ_I.XPT")
+DR1 = read.xport("../Data/DR1TOT_I.XPT")
+DR2 = read.xport("../Data/DR2TOT_I.XPT")
+BMX = read.xport("../Data/BMX_I.XPT")
 
 # Merge all of the relevant variables
 dm = join_all(list(DEMO[,c("SEQN", "RIDAGEYR", "RIAGENDR", "RIDEXPRG")],
@@ -90,23 +90,46 @@ dr2_final = dm_final[dm_final$day==2,]
 
 # check if the response variable - kcal is normally distributed
 # day1
-hist(dm_final[dm_final$day==1, ]$kcal, main = "Day 1")
+# hist(dm_final[dm_final$day==1, ]$kcal, main = "Day 1")
+ggplot(dr1_final, aes(x = kcal)) + 
+  geom_histogram(aes(y = ..density..), 
+                 bins = 100, 
+                 fill = "blue", 
+                 alpha = 0.8) + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(dr1_final$kcal), 
+                            sd = sd(dr1_final$kcal))) + 
+  theme_bw()
+
 # day2
-hist(dm_final[dm_final$day==2, ]$kcal, main = "Day 2")
+# hist(dm_final[dm_final$day==2, ]$kcal, breaks = 100, main = "Day 2")
+ggplot(dr2_final, aes(x = kcal)) + 
+  geom_histogram(aes(y = ..density..), 
+                 bins = 100, 
+                 fill = "blue", 
+                 alpha = 0.8) + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(dr2_final$kcal), 
+                            sd = sd(dr2_final$kcal))) + 
+  theme_bw()
+
 # `kcal` seems to be approximately normal with a longer right tail 
 # for both day1 and day2.
 # In this case, no transformation would be needed.
 
-# fit a linear regression model
-model = dm_final %>% lm(formula = kcal ~ age + sed_act + bmi + diabetes + male)
+# fit a linear regression model for day 1
+model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes) + factor(male))
 # check collinearity
 summary(model)
 faraway::vif(model)
-corrplot(cor(dm_final))
+#corrplot(cor(dm_final))
 corrplot(cor(dr1_final))
 # No collinearity found.
 
 # fit a linear mixed model
 model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + 
-                             diabetes + male + (1|SEQN))
+                             factor(diabetes) + factor(male) + (1|SEQN))
 summary(model2)
+
+# To do: marginal effect
+
