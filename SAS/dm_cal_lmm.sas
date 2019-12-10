@@ -18,7 +18,7 @@
 *	 Take a closer look at three physical activity variables				   ; 
 * C. Handle top-coded age													   ;
 *	 NHANES data top-coded age at 80 and above. 							   ;
-*	 Choose a method to handle it appropriately.							   ;
+*	 Restrict it to 12-79 years old.							  			   ;
 * D. Transformation of response variable									   ;
 *	 Examine the normality of response variable								   ;
 *	 Determine whether a transformation is needed							   ;
@@ -29,9 +29,10 @@
 * F. Linear mixed model to account for both day 1 and day 2					   ;
 *	 Fit a linear mixed model to include both days data						   ;
 *	 Include a random intercept for each subject							   ;
+*	 Also, obtain marginal effects for diabetes and gender (male)			   ;
 *------------------------------------------------------------------------------;
 * Author: Jie Cao (caojie@umich.edu)										   ;
-* Last updated on: Dec 3, 2019												   ;
+* Last updated on: Dec 10, 2019												   ;
 /******************************************************************************/
 
 
@@ -214,21 +215,11 @@ run;
 ********************************;
 * C. Handle top-coded age	    ;
 ********************************;
-/* NHANES top-coded age variable at 80 years, therefore, we consider recode age 
-   into age groups. */ 
-/* We use the NIDDK report Diabetes in America, 3rd Edition, Chapter 3:
-   https://www.niddk.nih.gov/about-niddk/strategic-plans-reports/diabetes-in-america-3rd-edition
-   as the reference. 
-   Thus, we restrict analysis to age 12+, 
-   and have age groups of 12-19, 20-44, 45-64, 65-74, 75+ */
+/* NHANES top-coded age variable at 80 years, therefore, we consider restrict participant age range */ 
 data dm_cal;
 	set dm_cal;
-	/* Restrict to age 12+ */
+	/* Restrict to age 12-79 */
 	where 12 <= ageyr < 80;
-run;
-/* Proportion of participants in different age groups */
-proc freq data = dm_cal;
-	tables agegrp;
 run;
 
 
@@ -275,8 +266,10 @@ run;
 * F. Linear mixed model to account for both day 1 and day 2 ;
 ************************************************************;
 proc mixed data = dm_cal_final;
-	model tot_cal = diabetes ageyr male bmi sedentary_min / s;
+	class diabetes male;
+	model tot_cal = diabetes ageyr male bmi sedentary_min / solution;
 	random intercept / subject = subject;
+	lsmeans diabetes male / at means;
 run;
 
 
