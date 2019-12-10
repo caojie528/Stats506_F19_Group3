@@ -266,7 +266,7 @@ run;
 * F. Linear mixed model to account for both day 1 and day 2 ;
 ************************************************************;
 proc mixed data = dm_cal_final;
-	class diabetes male;
+	class diabetes(ref = "0") male;
 	model tot_cal = diabetes ageyr male bmi sedentary_min / solution;
 	random intercept / subject = subject;
 	lsmeans diabetes male / at means;
