@@ -607,6 +607,7 @@ We further look at the collinearity diagnostics (eigenvalues and condition numbe
 * F. Linear mixed model to account for both day 1 and day 2 ;
 ************************************************************;
 proc mixed data = dm_cal_final;
+  class diabetes(ref = "0") male;
 	model tot_cal = diabetes ageyr male bmi sedentary_min / s;
 	random intercept / subject = subject;
 	lsmeans diabetes male / at means;
@@ -624,6 +625,8 @@ run;
 ![](SAS/Figs/lmm_3.PNG)
 
 ![](SAS/Figs/lmm_4.PNG)
+
+![](SAS/Figs/mem.PNG)
 </div>
 
 
