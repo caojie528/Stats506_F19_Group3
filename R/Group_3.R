@@ -3,7 +3,7 @@
 ## Question: Do people diagnosed with diabetes consume less calories in the US?
 ##
 ## Author: Bei An (anbei@umich.edu)
-## Updated: Dec 5, 2019
+## Updated: Dec 10, 2019
 # 80: -------------------------------------------------------------------------
 
 # set up
@@ -13,6 +13,7 @@ library(plyr)
 library(dplyr)
 library(corrplot)
 library(lme4)
+library(ggplot2)
 
 # prepare datasets
 DEMO = read.xport("../Data/DEMO_I.XPT")
@@ -99,6 +100,7 @@ ggplot(dr1_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr1_final$kcal), 
                             sd = sd(dr1_final$kcal))) + 
+  labs(x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
 
 # day2
@@ -111,6 +113,7 @@ ggplot(dr2_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr2_final$kcal), 
                             sd = sd(dr2_final$kcal))) + 
+  labs(x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
 
 # `kcal` seems to be approximately normal with a longer right tail 
