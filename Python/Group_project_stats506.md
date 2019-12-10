@@ -1,16 +1,18 @@
 
-
-```python
 # Stats 506, Fall 2019
 # Group Project - Group 3
-#
-# This script analyzes the question:
-# "Do people diagnosed with diabetes consume less calories in US?"
-#
-# NHANES 2015-2016 data are used in this problem.
-#
-#
-# import packages
+
+ This script analyzes the question:
+ 
+**"Do people diagnosed with diabetes consume less calories in US?"**
+
+NHANES 2015-2016 data are used in this problem.
+
+
+## Import packages
+
+
+```python
 import pandas as pd
 from dfply import *
 from scipy import stats
@@ -21,53 +23,113 @@ from patsy import dmatrices
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 ```
 
-    C:\Users\wenji\AppData\Local\Continuum\anaconda3\lib\site-packages\statsmodels\compat\pandas.py:23: FutureWarning: The Panel class is removed from pandas. Accessing it from the top-level namespace will also be removed in the next version
-      data_klasses = (pandas.Series, pandas.DataFrame, pandas.Panel)
+## Read data
+List of XPT files from NHANES 2015-2016 that we will use in this analysis.  
 
+DEMO_I - Demographics  
+
+DR1TOT_I - Dietary, Day 1  
+
+DR2TOT_I - Dietary, Day 2  
+
+BMX_I - Body Measusrement  
+
+DIQ_I - Diabetes
+
+PAQ_I - Physical Activity
 
 
 ```python
-# read data
-demo = pd.read_sas('DEMO_I.XPT')
-dr1tot = pd.read_sas('DR1TOT_I.XPT')
-dr2tot = pd.read_sas('DR2TOT_I.XPT')
-bmx = pd.read_sas('BMX_I.XPT')
-diq = pd.read_sas('DIQ_I.XPT')
-pad = pd.read_sas('PAQ_I.XPT')
+demo = pd.read_sas('../Data/DEMO_I.XPT')
+dr1tot = pd.read_sas('../Data/DR1TOT_I.XPT')
+dr2tot = pd.read_sas('../Data/DR2TOT_I.XPT')
+bmx = pd.read_sas('../Data/BMX_I.XPT')
+diq = pd.read_sas('../Data/DIQ_I.XPT')
+pad = pd.read_sas('../Data/PAQ_I.XPT')
 ```
 
+## Merge data
+
+### Select columns needed
+
 
 ```python
-# select columns and merge into a single dataset
 demo_new = (demo >> 
             select(X.SEQN, X.RIDAGEYR, X.RIAGENDR, X.RIDEXPRG))
+
 dr1tot_new = (dr1tot >>
               mutate(dr1 = X.DR1TKCAL) >>
               select(X.SEQN, X.dr1))
 dr2tot_new = (dr2tot >>
               mutate(dr2 = X.DR2TKCAL) >>
              select(X.SEQN, X.dr2))
-dietary = pd.merge(dr1tot_new, dr2tot_new, on='SEQN')
+dietary = pd.merge(dr1tot_new, dr2tot_new, on='SEQN', how='outer')
 bmx_new = (bmx >>
           select(X.SEQN, X.BMXBMI))
 diq_new = (diq >>
           select(X.SEQN, X.DIQ010))
 pad_new = (pad >>
           select(X.SEQN, X.PAD615, X.PAD630, X.PAD680))
-questionnaire = pd.merge(diq_new, pad_new, on='SEQN')
-merge_2 = pd.merge(bmx_new, questionnaire, on='SEQN')
-merge_3 = pd.merge(merge_2, demo_new, on='SEQN')
+questionnaire = pd.merge(diq_new, pad_new, on='SEQN', how='outer')
+merge_2 = pd.merge(bmx_new, questionnaire, on='SEQN', how='outer')
+merge_3 = pd.merge(merge_2, demo_new, on='SEQN', how='outer')
+```
 
-# exclude data without diabetes diagnosis
-merge_3 = merge_3[merge_3.DIQ010 != 7 ]
-merge_3 = merge_3[merge_3.DIQ010 != 9 ]
+### Inclusion/Exclusion
 
-# exclude pregnant participants
+Include data with confirmed diabetes diagnosis
+
+
+```python
+# Better to specify the values we want to include, instead of exclusion
+# in case there is missing - but okay in this analysis
+diabetes_in = [1, 2, 3]
+merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
+#merge_3 = merge_3[merge_3.DIQ010 != 7 ]
+#merge_3 = merge_3[merge_3.DIQ010 != 9 ]
+```
+
+Exclude pregnant participants
+
+
+```python
 merge_3 = merge_3[merge_3.RIDEXPRG != 1 ]
+```
 
-# create a new variable representing diabetes
-  # 1 - diabetes or borderline
-  # 0 - non-diabetes
+Include participants aged 12-79 years old
+
+NHANES top-coded age at 80, which means participants aged 80 or older are all coded as 80. 
+
+Hence, we decide to only look at adolescents greater than 12 years old) and adults less than 80 years old. 
+
+
+```python
+merge_3 = merge_3[merge_3.RIDAGEYR < 80]
+merge_3 = merge_3[merge_3.RIDAGEYR >= 12]
+```
+
+
+```python
+merge_3.shape
+```
+
+
+
+
+    (6586, 9)
+
+
+
+### Variable recoding/creation
+
+Binary **diabetes** variable:
+
+1 - diabetes or borderline
+
+0 - non-diabetes
+
+
+```python
 diabete = []
 for i in merge_3.DIQ010:
     if i == 2:
@@ -75,18 +137,34 @@ for i in merge_3.DIQ010:
     else:
         diabete.append(1)
 merge_3['diabetes'] = diabete
+```
 
-# create a new variable representing male
-  # 1 - male
-  # 0 - female
-gender = []
+Binary **male** variable:
+
+1 - male
+
+0 - female
+
+
+```python
+male = []
 for i in merge_3.RIAGENDR:
     if i == 1:
-        gender.append(1)
+        male.append(1)
     else:
-        gender.append(0)
-merge_3['gender'] = gender
-merge = pd.merge(merge_3, dietary, on='SEQN')
+        male.append(0)
+merge_3['male'] = male
+```
+
+Dietary intervew **day** variable: 
+
+1 - interview day 1  
+
+2 - interview day 2
+
+
+```python
+merge = pd.merge(merge_3, dietary, on='SEQN', how='left')
 
 # pivot the data into "long" format
 merge = merge.melt(id_vars=merge.iloc[:,0:11], var_name='day', value_name='y')
@@ -99,70 +177,176 @@ for i in merge.day:
     else:
         days.append(2)
 merge['day'] = days
+```
 
+### Prepare final working datasets
+
+
+```python
 # remove rows with missing value
-merge = merge.dropna()
-
-# Note that `age` is top-coded at 80, 
-## which means participants aged 80 or older were allrecorded as age 80. 
-## To avoid inaccurate data, we decided to set an age bound from 12 to 79.
-merge = merge[merge["RIDAGEYR"] < 80]
-merge = merge[merge["RIDAGEYR"] > 12]
-
-# remove rows with missing value
-final = merge.drop(["RIDEXPRG", "PAD615", "PAD630", "DIQ010", "RIAGENDR"], axis=1)
+final = merge.drop(["RIDEXPRG", "RIAGENDR", "PAD615", "PAD630", "DIQ010"], axis=1)
+# remove rows with any missing value
+final = final.dropna()
 final_day1 = final[final["day"] == 1]
 final_day2 = final[final["day"] == 2]
 ```
 
 
 ```python
-# check linearity for final_day1
-plt.hist(final_day1["y"])
-plt.savefig('Group_project_stats506_3_0.png')
+final.shape
+```
+
+
+
+
+    (10528, 8)
+
+
+
+
+```python
+final_day1.shape
+```
+
+
+
+
+    (5752, 8)
+
+
+
+
+```python
+final_day2.shape
+```
+
+
+
+
+    (4776, 8)
+
+
+
+### Check normality of response variable
+
+Day 1 Total Energy (kcal)
+
+
+```python
+plt.hist(final_day1["y"], bins=100, density=1)
+plt.savefig('./Figs/hist_day1.png')
 plt.show()
 ```
 
 
-![png](Group_project_stats506_files/Group_project_stats506_3_0.png)
+![](Figs/hist_day1.png)
 
+
+Day 2 Total Energy (kcal)
 
 
 ```python
-# check linearity for final_day1
-plt.hist(final_day2["y"])
-plt.savefig('Group_project_stats506_4_0.png')
+plt.hist(final_day2["y"], bins=100)
+plt.savefig('./Figs/hist_day2.png')
 plt.show()
 ```
 
 
-![png](Group_project_stats506_files/Group_project_stats506_4_0.png)
+![png](Figs/hist_day2.png)
 
+
+**Conclusion**: Approximately normal - no need to transform the response variable.
+
+### Check collinearity (use day 1 only)
+
+Correlation matrix of predictors
 
 
 ```python
-k2, p = stats.normaltest(final_day1['y'])
-print("p = {:g}".format(p))
+predictors = final_day1[final_day1.columns[1:6]]
+predictors.corr()
 ```
 
-    p = 0.000159355
 
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>BMXBMI</th>
+      <th>PAD680</th>
+      <th>RIDAGEYR</th>
+      <th>diabetes</th>
+      <th>male</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>BMXBMI</th>
+      <td>1.000000</td>
+      <td>-0.010791</td>
+      <td>0.242742</td>
+      <td>0.222468</td>
+      <td>-0.088875</td>
+    </tr>
+    <tr>
+      <th>PAD680</th>
+      <td>-0.010791</td>
+      <td>1.000000</td>
+      <td>-0.034440</td>
+      <td>-0.009275</td>
+      <td>-0.017472</td>
+    </tr>
+    <tr>
+      <th>RIDAGEYR</th>
+      <td>0.242742</td>
+      <td>-0.034440</td>
+      <td>1.000000</td>
+      <td>0.341760</td>
+      <td>-0.009280</td>
+    </tr>
+    <tr>
+      <th>diabetes</th>
+      <td>0.222468</td>
+      <td>-0.009275</td>
+      <td>0.341760</td>
+      <td>1.000000</td>
+      <td>0.025974</td>
+    </tr>
+    <tr>
+      <th>male</th>
+      <td>-0.088875</td>
+      <td>-0.017472</td>
+      <td>-0.009280</td>
+      <td>0.025974</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+OLS model for day 1
 
 
 ```python
-k2, p = stats.normaltest(final_day2['y'])
-print("p = {:g}".format(p))
-```
-
-    p = 5.06948e-06
-
-
-No non-linearity found.
-
-
-```python
-# OLS model for day 1
-x = sm.add_constant(final_day1[final_day1.columns[1:5]])
+x = sm.add_constant(final_day1[final_day1.columns[1:6]])
 model = sm.OLS(final_day1['y'], x)
 results = model.fit()
 print(results.summary())
@@ -170,63 +354,68 @@ print(results.summary())
 
                                 OLS Regression Results                            
     ==============================================================================
-    Dep. Variable:                      y   R-squared:                       0.004
-    Model:                            OLS   Adj. R-squared:                 -0.022
-    Method:                 Least Squares   F-statistic:                    0.1695
-    Date:                Tue, 03 Dec 2019   Prob (F-statistic):              0.954
-    Time:                        23:37:40   Log-Likelihood:                -1260.1
-    No. Observations:                 155   AIC:                             2530.
-    Df Residuals:                     150   BIC:                             2545.
-    Df Model:                           4                                         
+    Dep. Variable:                      y   R-squared:                       0.095
+    Model:                            OLS   Adj. R-squared:                  0.094
+    Method:                 Least Squares   F-statistic:                     120.7
+    Date:                Tue, 10 Dec 2019   Prob (F-statistic):          8.08e-122
+    Time:                        10:48:47   Log-Likelihood:                -47383.
+    No. Observations:                5752   AIC:                         9.478e+04
+    Df Residuals:                    5746   BIC:                         9.482e+04
+    Df Model:                           5                                         
     Covariance Type:            nonrobust                                         
     ==============================================================================
                      coef    std err          t      P>|t|      [0.025      0.975]
     ------------------------------------------------------------------------------
-    const       2047.3486    420.058      4.874      0.000    1217.353    2877.344
-    BMXBMI        -3.5250      7.775     -0.453      0.651     -18.887      11.837
-    PAD680        -0.0501      0.417     -0.120      0.905      -0.874       0.774
-    RIDAGEYR       0.6708     10.121      0.066      0.947     -19.327      20.668
-    diabetes     265.4636    354.898      0.748      0.456    -435.781     966.708
+    const       1845.4133     55.121     33.479      0.000    1737.355    1953.472
+    BMXBMI         5.4510      1.727      3.156      0.002       2.065       8.837
+    PAD680        -0.0405      0.014     -2.876      0.004      -0.068      -0.013
+    RIDAGEYR      -3.8870      0.667     -5.827      0.000      -5.195      -2.579
+    diabetes    -116.0930     37.896     -3.063      0.002    -190.383     -41.803
+    male         565.2939     24.269     23.293      0.000     517.718     612.870
     ==============================================================================
-    Omnibus:                       17.668   Durbin-Watson:                   2.023
-    Prob(Omnibus):                  0.000   Jarque-Bera (JB):               20.567
-    Skew:                           0.767   Prob(JB):                     3.42e-05
-    Kurtosis:                       3.912   Cond. No.                     2.20e+03
+    Omnibus:                     1368.319   Durbin-Watson:                   2.034
+    Prob(Omnibus):                  0.000   Jarque-Bera (JB):             4401.805
+    Skew:                           1.199   Prob(JB):                         0.00
+    Kurtosis:                       6.552   Cond. No.                     4.59e+03
     ==============================================================================
     
     Warnings:
     [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-    [2] The condition number is large, 2.2e+03. This might indicate that there are
+    [2] The condition number is large, 4.59e+03. This might indicate that there are
     strong multicollinearity or other numerical problems.
 
+
+Variance Infation Factor (VIF)
 
 
 ```python
 # Break into left and right hand side; y and X
-y, X = dmatrices("y ~ BMXBMI + PAD680 + RIDAGEYR + diabetes", data=final_day1, return_type="dataframe")
+y, X = dmatrices("y ~ BMXBMI + PAD680 + RIDAGEYR + diabetes + male", data=final_day1, return_type="dataframe")
 
 # For each Xi, calculate VIF
 vif = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-vif
+vif[1:] # No need to look at VIF for intercept
 ```
 
 
 
 
-    [39.24402833965102,
-     1.032095249588678,
-     1.0253815257501617,
-     1.0158300005008685,
-     1.0424003078079123]
+    [1.0980699620399632,
+     1.0015371700466498,
+     1.1722346969542117,
+     1.1618062474485058,
+     1.0105433137760211]
 
 
 
-No collinearity found.
+**Conclusion**: No collinearity issue.
+
+### Linear mixed model for both days
 
 
 ```python
 # LMM model
-mixed = smf.mixedlm("y ~ BMXBMI + PAD680 + RIDAGEYR + diabetes", final, groups = final["SEQN"])
+mixed = smf.mixedlm("y ~ BMXBMI + PAD680 + RIDAGEYR + diabetes + male", final, groups = final["SEQN"])
 mixed_fit = mixed.fit()
 #print the summary
 print(mixed_fit.summary())
@@ -235,187 +424,28 @@ print(mixed_fit.summary())
                Mixed Linear Model Regression Results
     ============================================================
     Model:             MixedLM  Dependent Variable:  y          
-    No. Observations:  283      Method:              REML       
-    No. Groups:        155      Scale:               429378.5852
-    Min. group size:   1        Likelihood:          -2278.9563 
+    No. Observations:  10528    Method:              REML       
+    No. Groups:        5752     Scale:               510040.7789
+    Min. group size:   1        Likelihood:          -86154.8654
     Max. group size:   2        Converged:           Yes        
     Mean group size:   1.8                                      
     ------------------------------------------------------------
                 Coef.    Std.Err.   z    P>|z|  [0.025   0.975] 
     ------------------------------------------------------------
-    Intercept   1805.051  365.610  4.937 0.000 1088.468 2521.633
-    BMXBMI        -2.985    6.857 -0.435 0.663  -16.424   10.454
-    PAD680         0.047    0.367  0.129 0.898   -0.672    0.767
-    RIDAGEYR       4.738    8.810  0.538 0.591  -12.529   22.006
-    diabetes     357.817  311.786  1.148 0.251 -253.273  968.906
-    Group Var 293000.409  135.495                               
+    Intercept   1808.464   45.807 39.480 0.000 1718.684 1898.244
+    BMXBMI         2.314    1.430  1.618 0.106   -0.489    5.118
+    PAD680        -0.030    0.012 -2.563 0.010   -0.054   -0.007
+    RIDAGEYR      -2.500    0.553 -4.517 0.000   -3.584   -1.415
+    diabetes    -101.157   31.384 -3.223 0.001 -162.669  -39.646
+    male         538.477   20.178 26.686 0.000  498.928  578.025
+    Group Var 292948.651   22.660                               
     ============================================================
     
 
 
 
 ```python
-mixed_fit.random_effects
+#mixed_fit.random_effects
 ```
 
-
-
-
-    {83752.0: Group    714.014326
-     dtype: float64, 83781.0: Group    218.054765
-     dtype: float64, 83857.0: Group    136.60615
-     dtype: float64, 83959.0: Group   -550.314443
-     dtype: float64, 84033.0: Group   -79.760159
-     dtype: float64, 84073.0: Group    562.812273
-     dtype: float64, 84130.0: Group   -355.544879
-     dtype: float64, 84187.0: Group   -210.096806
-     dtype: float64, 84192.0: Group   -344.604582
-     dtype: float64, 84412.0: Group    8.118748
-     dtype: float64, 84440.0: Group   -381.40279
-     dtype: float64, 84547.0: Group   -155.45698
-     dtype: float64, 84587.0: Group    194.945027
-     dtype: float64, 84716.0: Group    96.785213
-     dtype: float64, 84766.0: Group   -152.005506
-     dtype: float64, 84797.0: Group    1511.578945
-     dtype: float64, 84816.0: Group   -0.664801
-     dtype: float64, 84825.0: Group    89.080769
-     dtype: float64, 84937.0: Group    161.108954
-     dtype: float64, 85040.0: Group   -93.508833
-     dtype: float64, 85055.0: Group    349.567852
-     dtype: float64, 85132.0: Group   -305.468962
-     dtype: float64, 85160.0: Group    39.245748
-     dtype: float64, 85222.0: Group    236.712323
-     dtype: float64, 85309.0: Group    248.162962
-     dtype: float64, 85343.0: Group   -509.875522
-     dtype: float64, 85515.0: Group   -469.712628
-     dtype: float64, 85659.0: Group    1138.40668
-     dtype: float64, 85676.0: Group    678.179722
-     dtype: float64, 85696.0: Group   -717.05304
-     dtype: float64, 85787.0: Group    575.344502
-     dtype: float64, 85915.0: Group   -583.993194
-     dtype: float64, 85936.0: Group   -492.497505
-     dtype: float64, 85948.0: Group   -167.173206
-     dtype: float64, 86022.0: Group   -264.348461
-     dtype: float64, 86029.0: Group   -54.685422
-     dtype: float64, 86189.0: Group    683.036407
-     dtype: float64, 86262.0: Group    278.254524
-     dtype: float64, 86322.0: Group   -204.938091
-     dtype: float64, 86461.0: Group    312.717254
-     dtype: float64, 86490.0: Group   -377.055662
-     dtype: float64, 86528.0: Group   -345.910279
-     dtype: float64, 86600.0: Group    156.838753
-     dtype: float64, 86611.0: Group   -81.519336
-     dtype: float64, 86632.0: Group    636.09565
-     dtype: float64, 86761.0: Group    13.277571
-     dtype: float64, 86968.0: Group    44.50787
-     dtype: float64, 86981.0: Group   -30.553453
-     dtype: float64, 87005.0: Group    176.754849
-     dtype: float64, 87046.0: Group    197.183121
-     dtype: float64, 87066.0: Group    718.380519
-     dtype: float64, 87130.0: Group    262.78048
-     dtype: float64, 87171.0: Group   -365.31923
-     dtype: float64, 87200.0: Group    311.313816
-     dtype: float64, 87243.0: Group   -359.342715
-     dtype: float64, 87346.0: Group   -572.494736
-     dtype: float64, 87423.0: Group   -550.337855
-     dtype: float64, 87427.0: Group    107.663298
-     dtype: float64, 87473.0: Group   -44.58847
-     dtype: float64, 87501.0: Group    414.740938
-     dtype: float64, 87520.0: Group   -73.164355
-     dtype: float64, 87636.0: Group   -194.083515
-     dtype: float64, 87802.0: Group   -92.607756
-     dtype: float64, 87808.0: Group   -146.476724
-     dtype: float64, 87845.0: Group   -373.510281
-     dtype: float64, 87892.0: Group    489.839415
-     dtype: float64, 87895.0: Group   -390.494126
-     dtype: float64, 87942.0: Group   -392.209017
-     dtype: float64, 88072.0: Group   -394.701329
-     dtype: float64, 88082.0: Group    336.74161
-     dtype: float64, 88147.0: Group   -416.693601
-     dtype: float64, 88205.0: Group   -64.438246
-     dtype: float64, 88333.0: Group   -181.612475
-     dtype: float64, 88412.0: Group    381.73585
-     dtype: float64, 88440.0: Group    389.22565
-     dtype: float64, 88451.0: Group    339.779095
-     dtype: float64, 88504.0: Group    442.186858
-     dtype: float64, 88507.0: Group   -673.367181
-     dtype: float64, 88540.0: Group    605.596895
-     dtype: float64, 88570.0: Group   -403.536666
-     dtype: float64, 88583.0: Group   -438.528456
-     dtype: float64, 88632.0: Group    75.008079
-     dtype: float64, 88674.0: Group   -586.50933
-     dtype: float64, 88707.0: Group   -558.201297
-     dtype: float64, 88720.0: Group    87.970199
-     dtype: float64, 88786.0: Group   -249.136366
-     dtype: float64, 88868.0: Group    281.690192
-     dtype: float64, 88892.0: Group   -88.3253
-     dtype: float64, 88970.0: Group   -47.402054
-     dtype: float64, 89160.0: Group   -448.346747
-     dtype: float64, 89233.0: Group    42.706284
-     dtype: float64, 89362.0: Group    348.886368
-     dtype: float64, 89453.0: Group   -31.18674
-     dtype: float64, 89474.0: Group   -336.343452
-     dtype: float64, 89659.0: Group   -83.884884
-     dtype: float64, 89823.0: Group   -347.228356
-     dtype: float64, 89833.0: Group   -237.332797
-     dtype: float64, 89854.0: Group    561.270842
-     dtype: float64, 89929.0: Group   -133.058818
-     dtype: float64, 89980.0: Group    310.033335
-     dtype: float64, 90020.0: Group    404.522018
-     dtype: float64, 90074.0: Group   -58.219194
-     dtype: float64, 90189.0: Group   -97.953465
-     dtype: float64, 90398.0: Group   -164.116793
-     dtype: float64, 90461.0: Group   -34.15224
-     dtype: float64, 90463.0: Group   -5.077516
-     dtype: float64, 90494.0: Group   -114.910465
-     dtype: float64, 90516.0: Group    384.055122
-     dtype: float64, 90547.0: Group   -568.2198
-     dtype: float64, 90573.0: Group    488.537931
-     dtype: float64, 90627.0: Group   -753.197529
-     dtype: float64, 90804.0: Group    321.643389
-     dtype: float64, 90966.0: Group    219.392462
-     dtype: float64, 90994.0: Group   -60.076761
-     dtype: float64, 91078.0: Group   -670.218994
-     dtype: float64, 91091.0: Group    82.73983
-     dtype: float64, 91101.0: Group    107.132758
-     dtype: float64, 91113.0: Group    1000.538565
-     dtype: float64, 91139.0: Group    276.856001
-     dtype: float64, 91204.0: Group    532.575261
-     dtype: float64, 91249.0: Group   -192.087851
-     dtype: float64, 91324.0: Group    99.021472
-     dtype: float64, 91336.0: Group   -235.33189
-     dtype: float64, 91358.0: Group   -175.056167
-     dtype: float64, 91724.0: Group   -495.84074
-     dtype: float64, 91826.0: Group    556.551694
-     dtype: float64, 91835.0: Group   -332.41481
-     dtype: float64, 91893.0: Group   -443.260514
-     dtype: float64, 91916.0: Group   -578.614068
-     dtype: float64, 91922.0: Group   -135.215927
-     dtype: float64, 91993.0: Group    382.422285
-     dtype: float64, 91997.0: Group   -88.97439
-     dtype: float64, 91999.0: Group    284.130785
-     dtype: float64, 92190.0: Group   -561.968772
-     dtype: float64, 92225.0: Group    141.469799
-     dtype: float64, 92300.0: Group   -182.623942
-     dtype: float64, 92423.0: Group    216.453842
-     dtype: float64, 92428.0: Group    686.550434
-     dtype: float64, 92478.0: Group    216.045579
-     dtype: float64, 92506.0: Group   -630.770357
-     dtype: float64, 92545.0: Group   -96.402139
-     dtype: float64, 92551.0: Group    640.640992
-     dtype: float64, 92657.0: Group    19.039244
-     dtype: float64, 92761.0: Group   -73.781813
-     dtype: float64, 92767.0: Group    64.327762
-     dtype: float64, 93123.0: Group    414.336505
-     dtype: float64, 93213.0: Group   -162.775118
-     dtype: float64, 93222.0: Group    212.973539
-     dtype: float64, 93305.0: Group   -2.255547
-     dtype: float64, 93392.0: Group   -269.232823
-     dtype: float64, 93483.0: Group    422.638117
-     dtype: float64, 93524.0: Group    257.480725
-     dtype: float64, 93600.0: Group   -258.58231
-     dtype: float64, 93606.0: Group   -511.249068
-     dtype: float64, 93665.0: Group   -241.828374
-     dtype: float64}
-
-
+Marginal effect
