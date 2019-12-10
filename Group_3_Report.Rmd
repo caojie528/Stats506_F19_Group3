@@ -102,6 +102,15 @@ The data preparation, model checking and model fitting were performed parallel i
 
 ### R 
 ```{r setup_r, include=FALSE}
+## Group project - R
+##
+## Question: Do people diagnosed with diabetes consume less calories in the US?
+##
+## Author: Bei An (anbei@umich.edu)
+## Updated: Dec 10, 2019
+# 80: -------------------------------------------------------------------------
+
+# set up
 library(foreign)
 library(tidyr)
 library(plyr)
@@ -221,6 +230,7 @@ ggplot(dr1_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr1_final$kcal), 
                             sd = sd(dr1_final$kcal))) + 
+  labs(x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
 # day2
 ggplot(dr2_final, aes(x = kcal)) + 
@@ -231,6 +241,7 @@ ggplot(dr2_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr2_final$kcal), 
                             sd = sd(dr2_final$kcal))) + 
+  labs(x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
 ```
 
@@ -246,7 +257,6 @@ model = dr1_final %>%
 # check collinearity
 summary(model)
 faraway::vif(model)
-corrplot(cor(dm_final))
 corrplot(cor(dr1_final))
 ```
 
