@@ -1,7 +1,7 @@
 ---
 title: "STATS 506 Project"
 author: "Group 3"
-date: "12/10/2019"
+date: "12/11/2019"
 output: html_document
 ---
 
@@ -20,12 +20,12 @@ library(ggeffects)
   
 ```{r, warning=FALSE}
 # prepare datasets
-DEMO = read.xport("./Data/DEMO_I.XPT")
-DIQ = read.xport("./Data/DIQ_I.XPT")
-PAQ = read.xport("./Data/PAQ_I.XPT")
-DR1 = read.xport("./Data/DR1TOT_I.XPT")
-DR2 = read.xport("./Data/DR2TOT_I.XPT")
-BMX = read.xport("./Data/BMX_I.XPT")
+DEMO = read.xport("../Data/DEMO_I.XPT")
+DIQ = read.xport("../Data/DIQ_I.XPT")
+PAQ = read.xport("../Data/PAQ_I.XPT")
+DR1 = read.xport("../Data/DR1TOT_I.XPT")
+DR2 = read.xport("../Data/DR2TOT_I.XPT")
+BMX = read.xport("../Data/BMX_I.XPT")
 ```
 
 Variables of interest:
@@ -101,7 +101,7 @@ sort(round(colSums(is.na(dm))/dim(dm)[1]*100, digits = 2), decreasing = TRUE)
 vig_work: 86% missing
 mod_work: 73% missing
 ```
-```
+
 `vig_work` and `mod_work` have much more missing values than other variables, so it is
 reasonable to remove them from the data frame.  
 `pregnancy` can also be removed since we only need this variable to filter out pregnant
@@ -110,7 +110,7 @@ individuals.
 
 Note that `age` is top-coded at 80, which means participants aged 80 or older were all
 recorded as age 80. To avoid inaccurate data, we decided to set an age bound from 12 to 79.
-```
+
 
 ```{r, warning=FALSE}
 dm = dm %>%
@@ -152,10 +152,10 @@ ggplot(dr2_final, aes(x = kcal)) +
   theme_bw()
 ```
 
-```
+
 `kcal` seems to be approximately normal with a longer right tail for both day1 and day2.
 In this case, no transformation would be needed.
-```
+
 
 ```{r, warning=FALSE}
 # fit a linear regression model for day 1
@@ -163,13 +163,14 @@ model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes)
 # check collinearity
 summary(model)
 faraway::vif(model)
-#corrplot(cor(dm_final))
-corrplot(cor(dr1_final))
+cor1 = cor(dr1_final[, c("age", "sed_act", "bmi", "diabetes", "male")])
+cor1
+corrplot(cor1)
 ```
 
-```
+
 No collinearity found.
-```
+
 
 ```{r, warning=FALSE}
 # for the benefit of model fitting, convert `diabetes` and `male` into factor variables
@@ -181,7 +182,7 @@ model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi +
                              diabetes + male + (1|SEQN))
 summary(model2)
 
-# Marginal effect for the LMM
+# Predicted total energy intake at population mean
 me = ggpredict(model2, c("diabetes","male"))
 plot(me, dodge = 0)
 ```

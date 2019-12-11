@@ -3,7 +3,7 @@
 ## Question: Do people diagnosed with diabetes consume less calories in the US?
 ##
 ## Author: Bei An (anbei@umich.edu)
-## Updated: Dec 10, 2019
+## Updated: Dec 11, 2019
 # 80: -------------------------------------------------------------------------
 
 # set up
@@ -17,12 +17,12 @@ library(ggplot2)
 library(ggeffects)
 
 # prepare datasets
-DEMO = read.xport("./Data/DEMO_I.XPT")
-DIQ = read.xport("./Data/DIQ_I.XPT")
-PAQ = read.xport("./Data/PAQ_I.XPT")
-DR1 = read.xport("./Data/DR1TOT_I.XPT")
-DR2 = read.xport("./Data/DR2TOT_I.XPT")
-BMX = read.xport("./Data/BMX_I.XPT")
+DEMO = read.xport("../Data/DEMO_I.XPT")
+DIQ = read.xport("../Data/DIQ_I.XPT")
+PAQ = read.xport("../Data/PAQ_I.XPT")
+DR1 = read.xport("../Data/DR1TOT_I.XPT")
+DR2 = read.xport("../Data/DR2TOT_I.XPT")
+BMX = read.xport("../Data/BMX_I.XPT")
 
 # Merge all of the relevant variables
 dm = join_all(list(DEMO[,c("SEQN", "RIDAGEYR", "RIAGENDR", "RIDEXPRG")],
@@ -131,8 +131,8 @@ model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes)
 # check collinearity
 summary(model)
 faraway::vif(model)
-#corrplot(cor(dm_final))
-corrplot(cor(dr1_final))
+cor1 = cor(dr1_final[, c("age", "sed_act", "bmi", "diabetes", "male")])
+corrplot(cor1)
 # No collinearity found.
 
 # for the benefit of model fitting, convert `diabetes` and `male` into factor variables
@@ -144,6 +144,6 @@ model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi +
                              diabetes + male + (1|SEQN))
 summary(model2)
 
-# Marginal effect for the LMM
+# Predicted total energy intake at population mean
 me = ggpredict(model2, c("diabetes","male"))
 plot(me, dodge = 0)
