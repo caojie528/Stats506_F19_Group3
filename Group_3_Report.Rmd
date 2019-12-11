@@ -10,16 +10,21 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
 ```
 
 ## Introduction
 
-People who are diagnosed with diabetes are generally advised to control their diet and cut calories for their health (**To do**: insert a reference here). Do people in the US literally follow this guideline? 
+Diabetes is a major public health concern in the United State. An estimated 30.3 million people in the U.S., or 9.4% of the population, have diabetes [1]. It also imposes substantial burden on society, provided that the total estimated cost of diagnosed diabetes in 2017 was \$327 billion, including \$237 billion in direct medical costs and \$90 billion in reduced productivity [2]. As a management of diabetes, people who are diagnosed with diabetes are advised to control their diet and choose foods that are lower in calories for their health [3]. However, it is unclear if people in the U.S. literally follow this guideline. 
 
-We found this question very interesting and worth to study. Thus the substantive question our group is going to answer is: Do people diagnosed with diabetes consume less calories in the US?
+Hence, the research question we are going to answer in this report is:
 
-Our analysis plan is to use a Linear Mixed Model(LMM) analyzing the effect of diabetes diagnosis on consumption of total calories, controling over other related predictors. The LMM result can give us information over the calories intake difference among people with and without diabetes.
+**Do people diagnosed with diabetes consume less calories in the United States?** 
 
+We found it to be an interesting question and worth studying, given the high prevalence of diabetes and the importance of diet control in diabetes self-management.  
+
+We plan to use National Health and Nutrition Examination Survey (NHANES) data, and fit a Linear Mixed Model(LMM) to analyze the effect of diabetes diagnosis on an individual's daily consumption of total calories, controling for other covariates. The LMM result will give us information on the calories intake difference among people with and without diabetes.
 
 
 ## Data  
@@ -30,7 +35,7 @@ The datasets and variables we used for our research question are summarized belo
 
 Dataset | Dataset Description | Variable name | Variable Description | Variable type  
 ------------- | ------------ | ------------- | ------------| -------------
-Every dataset listed below | | SEQN | Respondent<br> sequence number | Numeric  
+(ALL) | | SEQN | Respondent<br> sequence number | Numeric  
 [**Demographics data**](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&CycleBeginYear=2015) | | | 
 DEMO_I | Demographics | RIDAGEYR | Age in years at screening | Numeric 
 DEMO_I | Demographics | RIAGENDR | Gender | Numeric 
@@ -50,13 +55,20 @@ PAD_I | Physical Activity | PAD680 | Minutes sedentary activity | Numeric
 
 ## Methods  
 
-We fitted a linear mixed model to analyze the effect of diabetes diagnosis on consumption of total calories from both interview days, controlling for demographics, BMI and physical activity, and including a random intercept for each respondent. Below we provide details in each step: 
+### Model
+Linear mixed model (LMM) is an extension of simple linear model to include both fixed and random effects. It is particular useful when there is non independence in the data [4]. In NHANES data, participants were interviewed for dietary intake on two different days, thus the total calories intake data for the same respondent is not independent. Hence, we fitted an LMM to analyze the effect of diabetes diagnosis on consumption of total calories from both interview days, controlling for demographics, BMI and physical activity, and including a random intercept for each respondent.
+
+*Note: NHANES has sampling weights associated with each respondent. However, in our analysis, we treate each respondent as i.i.d. data, ignoring the sampling weights. *
+
+### Steps
+
+Below we provide detailed steps of our analysis: 
 
 1. Data merging  
 
-XPT files needed for the analysis were downloaded from the CDC website. Different datasets were merged into one using SEQN (respondent sequence number), and only variables we listed in the above data section were included in the merged data.  
+XPT files needed for the analysis were downloaded from the CDC website. Different datasets were merged into one using SEQN (respondent sequence number), and only variables we listed in the above [Data](#data) section were included in the merged data.  
 
-We have a merged dataset for day 1 only, one for day 2 only, and another one with day 1 and day 2 data stacked together.  
+We have one merged dataset for day 1 only, one for day 2 only, and another one with day 1 and day 2 data stacked together.  
 
 2. Inclusion/exclusion criteria  
 
@@ -64,18 +76,21 @@ Respondents with unknown diabetes are excluded from analysis.
 
 Respondents with confirmed pregnancy (RIDEXPRG) were excluded from our analysis.  
 
-Ages over 89 are considered protected health infomration (PHI). Therefore, NHANES data top-coded age variable at 80 years old, which means respondents aged 80 or more were all recorded as 80 in NHANES data. Therefore, we only include adolescent and adult respondents aged 12 to 79 in our analysis.  
+Ages over 89 are considered protected health infomration (PHI) [5]. Therefore, to avoid identifiability, NHANES data top-coded age variable ([RIDAGEYR](https://wwwn.cdc.gov/nchs/nhanes/2015-2016/DEMO_I.htm#RIDAGEYR)) at 80 years old, which means respondents aged 80 or older were all recorded as 80 in NHANES demographics data. As a result, We only include adolescent and adult respondents aged 12 to 79 in our analysis.  
 
 3. Variable recoding  
 
-We created a new binary *diabetes* variable, where respondents with diabetes diagnosis or borderline diagnosis are both considered positive (1)  in this new variable, and respondents with confirmed non-diabetes diagnosis are considered negative (0).  
+We created a new binary `diabetes` variable, where respondents with diabetes diagnosis or borderline diagnosis are both considered positive (1) in this new variable, and respondents with confirmed non-diabetes diagnosis are considered negative (0).  
 
-We recoded the two-level (1 vs 2) gender variable to a new *male* variable, where 1 indicates male, and 0 indicates female.  
+We recoded the two-level (1 vs 2) gender variable to a new `male` variable, where 1 indicates male, and 0 indicates female.  
 
-We added a *day* variable to indicate the dietary interview day.  
+We added a `day` variable to indicate the dietary interview day (1 or 2).  
 
 4. Missing pattern checks
-Missingness of each variable was checked in our analysis. Variable with large proportion of missing was furthre excluded from our analysis. Observations with missing in any of the variables we are going to use were deleted from the working dataset.  
+
+Missingness of each variable was checked in our analysis. Variables with large proportion of missing were furthre excluded from our analysis. 
+
+Observations with missing in any of the variables we are going to use were deleted from the final working dataset.  
 
 5. Normality examination  
 
@@ -85,7 +100,7 @@ We checked the normality of our response variable - total energy (kcal), by inte
 
 The correlation matrix of predictors were examined. 
 
-We then fitted a simple linear regression model using day 1 data only, and examined the variance inflation factor (VIF) to assess collinearity.  
+We then fitted a simple linear regression model using day 1 data only, and examined the variance inflation factor (VIF) to assess multicollinearity.  
 
 Predictors were the selected based on the multicollinearity inspection results.
 
@@ -93,10 +108,32 @@ Predictors were the selected based on the multicollinearity inspection results.
 
 We used both days' data to then fit a linear mixed model, including a random intercept for each respondent. 
 
-**To do:** obtain marginal effects  
+8. Predicted total calories intake at population means 
+
+We provided predicted total calories intake by diabetes and gender status when continuous covariates are held at population means. 
 
 
-The data preparation, model checking and model fitting were performed parallel in R, SAS, and Python. 
+### Software/tools
+The data preparation, model checking and model fitting were performed parallel in R [6], SAS [7], and Python [8]. The core packages/functions used for LMM are R - lmer4 package [9], SAS - proc mixed [10], and Python statsmodels package [11]. A summary of tools we used is shown in the table below: 
+
+```{r, echo = FALSE}
+Language = c("R", "SAS", "Python")
+Version = c("3.6.0", "9.4", "3.6")
+LMM = c("lme4", "proc mixed", "statsmodels")
+Others = c("foreign, tidyr, plyr, dplyr, corrplot, ggplot2, ggpredict", "proc reg", "pandas, dfply, scipy, matplotlib")
+
+tools = tibble(Language = Language, 
+               Version = Version, 
+               LMM = LMM, 
+               Others = Others)
+
+tools %>% 
+  kable(align = c("cccc")) %>% 
+  kable_styling("hover", full_width = FALSE) %>% 
+  column_spec(3:4, width = "5cm") %>% 
+  add_header_above(c(" " = 2, "Packages/Functions" = 2))
+```
+
 
 ## Core Analysis {.tabset .tabset-fade .tabset-pills}
 
@@ -107,7 +144,7 @@ The data preparation, model checking and model fitting were performed parallel i
 ## Question: Do people diagnosed with diabetes consume less calories in the US?
 ##
 ## Author: Bei An (anbei@umich.edu)
-## Updated: Dec 10, 2019
+## Updated: Dec 11, 2019
 # 80: -------------------------------------------------------------------------
 
 # set up
@@ -118,6 +155,7 @@ library(dplyr)
 library(corrplot)
 library(lme4)
 library(ggplot2)
+library(ggeffects)
 ```
 **Question: Do people diagnosed with diabetes consume less calories in the US?**
 
@@ -197,7 +235,7 @@ dm = dm %>%
 colSums(is.na(dm))
 ```
 
-```
+
 `vig_work` and `mod_work` have much more missing values than other variables, so it is
 reasonable to remove them from the data frame.  
 `pregnancy` can also be removed since we only need this variable to filter out pregnant
@@ -206,7 +244,7 @@ individuals.
 
 Note that `age` is top-coded at 80, which means participants aged 80 or older were all
 recorded as age 80. To avoid inaccurate data, we decided to set an age bound from 12 to 79.
-```
+
 
 ```{r, warning=FALSE}
 dm = dm %>%
@@ -245,10 +283,10 @@ ggplot(dr2_final, aes(x = kcal)) +
   theme_bw()
 ```
 
-```
+
 `kcal` seems to be approximately normal with a longer right tail for both day1 and day2.
 In this case, no transformation would be needed.
-```
+
 
 ```{r, warning=FALSE}
 # fit a linear regression model
@@ -257,18 +295,27 @@ model = dr1_final %>%
 # check collinearity
 summary(model)
 faraway::vif(model)
-corrplot(cor(dr1_final))
+cor1 = cor(dr1_final[, c("age", "sed_act", "bmi", "diabetes", "male")])
+cor1
+corrplot(cor1)
 ```
 
-```
+
 No collinearity found.
-```
+
 
 ```{r, warning=FALSE}
 # fit a linear mixed model
 model2 = dm_final %>% 
   lmer(formula = kcal ~ age + sed_act + bmi + factor(diabetes) + factor(male) + (1|SEQN))
 summary(model2)
+```
+
+
+```{r}
+# Predicted total energy intake at population mean
+me = ggpredict(model2, c("diabetes","male"))
+plot(me, dodge = 0)
 ```
 
 
@@ -1089,7 +1136,107 @@ Marginal effect
 
 ## Results  
 
-The linear regression model gave a decent fit to the data, but the percentage that this model was able to explain was rather low. The linear mixed model (LMM), on the other hand, generated in SAS and R, seems to be a better choice for regression analysis. Our LMM showed that the predictor variables of interest are all statistically significant, suggesting that all of these predictors are very likely to have an effect on the response variable. However, before drawing any conclusion, we still need to perform analysis on marginal effects, and we need to take a closer look at our Python section and figure out how to match it with the models in R and SAS. If the final steps agree with our previous analysis, then we can conclude that people diagnosed with diabetes consume less calories in the US.  
+### LMM summary
+
+All three analysis tools we used (R-lmer4, SAS-proc mixed, Python-statsmodels) gave the same results. The estimates, 95% confidence intervals (CI) and p-values for the fixed effects are summarized in Table 1. 
+
+```{r, echo = FALSE}
+lmm_summary = summary(model2)
+
+cap1 = paste("**Table 1**. Summary of fixed effects. ")
+
+lmm_summary$coefficients %>% 
+  as_tibble() %>% 
+  mutate(Covariate = c("(Intercept)", "Age (yr)", "Sedentary Activity (minutes)", 
+         "BMI (kg/m^2)", "Diabetes", "Male"), 
+         `p-value` = 2 * pt(abs(`t value`), df = 4775, lower.tail = F), 
+         lci = Estimate - 1.96 * `Std. Error`, 
+         uci = Estimate + 1.96 * `Std. Error`) %>% 
+  mutate(`Estimate` = sprintf("%.2f", Estimate), 
+         `95% CI` = sprintf("(%.2f, %.2f)", lci, uci), 
+         `p-value` = if_else(`p-value` < 0.0001, "<0.0001", sprintf("%.4f", `p-value`))) %>% 
+  select(Covariate, Estimate, `95% CI`, `p-value`) %>% 
+  kable(cap = cap1, align = "lccc") %>% 
+  kable_styling("hover", full_width = FALSE)
+```
+
+Our LMM showed that the predictor variables of interest are all statistically significant at level of 0.05, except BMI, suggesting that these predictors, including diabetes status, have a significant effect on the predicting the response variable - total daily consumption of calories. An individual with diabetes is predicted to consume 101 less calories compared to a non-diabetes individual, while other covariate are held the same. 
+
+
+### Covariance component
+
+The standard deviation for each covariance component (subject and error) are shown in the Table 2. 
+
+```{r, echo = FALSE}
+cap2 = paste("**Table 2**. Standard deviations for each variance component - subject and error. ")
+
+VarCorr(model2) %>% 
+  as_tibble() %>% 
+  mutate(`Variance Component` = c("Subject", "Error"), 
+         `Standard Deviation` = sdcor) %>% 
+  select(`Variance Component`, `Standard Deviation`) %>% 
+  kable(cap = cap2, align = "lc", digits = 2) %>% 
+  kable_styling("hover", full_width = FALSE)
+```
+
+
+
+### Marginal effects
+
+Marginal effect measures how the response variable changes when a specific predictor changes, while other covariates are assumed to be held constant. 
+
+We used a continuous response variable in our LMM model, therefore, the marginal effects are equal to the beta coefficients we obtained from the model summary. Marginal effects for continuous covariates measure the instantaneous rate of change, i.e. an approximation of the amount of change in total calories intake produced by one-unit change in age/BMI/Sedentary activity in our model. With binary covariates (diabetes and male in our model) measure discreate change, i.e. how many total calories consumption change as the diabetes status changes no to yes, or gender changes from female to male. 
+
+Since marginal effects for discrete variables are more meaningful, and we are interested in the effect of diabetes on total calories intake, we present predicted total calories intake by diabetes status and gender. 
+
+First, we present the population means of the continuous covariates:
+```{r, echo = FALSE}
+cap3 = paste("**Table 3**.", 
+             "Population means of continuous covariates", 
+             "- Age, BMI and Sedentary Activity")
+
+dm_final %>% 
+  summarise(`Age (yr)` = mean(age), 
+            `BMI (kg/m^2)` = mean(bmi), 
+            `Sedentary Activity (minute)` = mean(sed_act)) %>% 
+  mutate(Measure = "Mean") %>% 
+  select(Measure, `Age (yr)`, `BMI (kg/m^2)`, `Sedentary Activity (minute)`) %>% 
+  kable(cap = cap3, digits = 2, align = "lccc") %>% 
+  kable_styling("hover", full_width = FALSE)
+```
+
+We also provide predicted consumption of daily total calories by diabetes and gender in the below table and figure. 
+
+```{r, echo = FALSE}
+me = ggpredict(model2, c("diabetes","male"))
+
+# Table 
+cap4 = paste("**Table 4**.", 
+             "Predicted consumption of total calories (95% CI),", 
+             "by diabetes status and gender.")
+
+tibble(diabetes = c("Non-diabetes", "Non-diabetes", "Diabetes", "Diabetes"), 
+       male = c("Female", "Male", "Female", "Male"), 
+       pred_kcal = me$predicted, 
+       se = me$std.error, 
+       lci = me$conf.low, 
+       uci = me$conf.high) %>% 
+  mutate(pred = sprintf("%.2f (%.2f, %.2f)", pred_kcal, lci, uci)) %>% 
+  select(diabetes, male, pred) %>% 
+  pivot_wider(id_cols = diabetes, names_from = male, values_from = pred) %>% 
+  mutate(`Predicted Total Calories (95% CI)` = diabetes) %>% 
+  select(`Predicted Total Calories (95% CI)`, Female, Male) %>% 
+  kable(cap = cap4, align = "lcc") %>% 
+  kable_styling("hover", full_width = FALSE)
+  
+# Figure
+plot(me, dodge = 0)
+```
+
+
+**Conclusion: People diagnosed with diabetes consume less (~101 kcal) calories in the U.S. compared to non-diabetes individuals, if controlled for gender, age, BMI and sedentary activity.**  
+
+Our conclusion indicates that diabetic individuals in the U.S generally follow the guideline to reduce their calories consumption, while taking age, gender, BMI and sedentary activity into account. Further analyses could be done by controlling for more potential confounders and bring in sampling weights to better estimate the U.S. population distribution. 
 
 
 ## Discussion  
@@ -1103,12 +1250,24 @@ The linear regression model gave a decent fit to the data, but the percentage th
 
 ## Reference
 
-1. [Diabetes calorie consumption]
+[1] NIDDK. Diabetes Statistics. https://www.niddk.nih.gov/health-information/health-statistics/diabetes-statistics. Accessed 12/11/2019. 
 
-2. [R lmer4]
+[2] American Diabetes Association. Economic costs of diabetes in the US in 2017. *Diabetes care* 41, no. 5 (2018): 917-928.
 
-3. [SAS proc mixed]
+[3] CDC. 4 Steps to Manage Your Diabetes. https://www.cdc.gov/diabetes/ndep/pdfs/4steps/4Steps-English.pdf. Accessed 12/11/2019. 
 
-4. [Python lmm]
+[4] UCLA Institute for Digital Research & Education. Introduction to Linear Mixed Models. https://stats.idre.ucla.edu/other/mult-pkg/introduction-to-linear-mixed-models/. Accessed 12/11/2019. 
 
+[5] HIPPA. Guidance Regarding Methods for De-identification of Protected Health Information in Accordance with the Health Insurance Portability and Accountability Act (HIPAA) Privacy Rule. https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/index.html. Accessed 12/11/2019. 
 
+[6]. R Core Team (2019). R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing, Vienna. https://www.R-project.org
+
+[7] SAS Institute Inc. SAS® 9.4. Cary, NC: SAS Institute Inc; 2019. 
+
+[8] Python Software Foundation. Python Language Reference, version 3.6. http://www.python.org
+
+[9] Douglas Bates and Martin Machler and Ben Bolker and Steve Walker. Fitting Linear Mixed-Effects Models Using lme4. *Journal of Statistical Software* 67(1), 1-48.
+
+[10] SAS Institute Inc. 2017. *SAS/STAT® 14.3 User’s Guide*. Cary, NC: SAS Institute Inc. 
+
+[11] Seabold, Skipper, and Josef Perktold. “Statsmodels: Econometric and statistical modeling with python.” *Proceedings of the 9th Python in Science Conference*. 2010.
