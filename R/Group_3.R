@@ -14,14 +14,15 @@ library(dplyr)
 library(corrplot)
 library(lme4)
 library(ggplot2)
+library(ggeffects)
 
 # prepare datasets
-DEMO = read.xport("../Data/DEMO_I.XPT")
-DIQ = read.xport("../Data/DIQ_I.XPT")
-PAQ = read.xport("../Data/PAQ_I.XPT")
-DR1 = read.xport("../Data/DR1TOT_I.XPT")
-DR2 = read.xport("../Data/DR2TOT_I.XPT")
-BMX = read.xport("../Data/BMX_I.XPT")
+DEMO = read.xport("./Data/DEMO_I.XPT")
+DIQ = read.xport("./Data/DIQ_I.XPT")
+PAQ = read.xport("./Data/PAQ_I.XPT")
+DR1 = read.xport("./Data/DR1TOT_I.XPT")
+DR2 = read.xport("./Data/DR2TOT_I.XPT")
+BMX = read.xport("./Data/BMX_I.XPT")
 
 # Merge all of the relevant variables
 dm = join_all(list(DEMO[,c("SEQN", "RIDAGEYR", "RIAGENDR", "RIDEXPRG")],
@@ -67,7 +68,12 @@ dm = dm %>%
   arrange(SEQN, day)
 
 # check for missing values for each variable
-colSums(is.na(dm))
+sort(colSums(is.na(dm)), decreasing = TRUE)
+# percentage of missing values
+sort(round(colSums(is.na(dm))/dim(dm)[1]*100, digits = 2), decreasing = TRUE)
+
+# vig_work: 86% missing
+# mod_work: 73% missing
 
 # `vig_work` and `mod_work` have much more missing values than other variables,
 # so it is reasonable to remove them from the data frame.  
@@ -129,10 +135,15 @@ faraway::vif(model)
 corrplot(cor(dr1_final))
 # No collinearity found.
 
+# for the benefit of model fitting, convert `diabetes` and `male` into factor variables
+dm_final$diabetes = factor(dm_final$diabetes)
+dm_final$male = factor(dm_final$male)
+
 # fit a linear mixed model
 model2 = dm_final %>% lmer(formula = kcal ~ age + sed_act + bmi + 
-                             factor(diabetes) + factor(male) + (1|SEQN))
+                             diabetes + male + (1|SEQN))
 summary(model2)
 
-# To do: marginal effect
-
+# Marginal effect for the LMM
+me = ggpredict(model2, c("diabetes","male"))
+plot(me, dodge = 0)
