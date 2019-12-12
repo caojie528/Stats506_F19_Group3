@@ -135,7 +135,7 @@ ggplot(dr1_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr1_final$kcal), 
                             sd = sd(dr1_final$kcal))) + 
-  labs(x = "Total Energy (kcal)", y = "Frequency") + 
+  labs(title = "Day 1", x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
 
 # day2
@@ -148,8 +148,15 @@ ggplot(dr2_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr2_final$kcal), 
                             sd = sd(dr2_final$kcal))) + 
-  labs(x = "Total Energy (kcal)", y = "Frequency") + 
+  labs(title = "Day 2", x = "Total Energy (kcal)", y = "Frequency") + 
   theme_bw()
+
+# qqplots for day 1 and day 2
+par(mfrow=c(2,1))
+qqnorm(dr1_final$kcal, main = "Day 1")
+qqline(dr1_final$kcal, col = "blue", lwd = 2)
+qqnorm(dr2_final$kcal, main = "Day 2")
+qqline(dr2_final$kcal, col = "blue", lwd = 2)
 ```
 
 
