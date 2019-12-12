@@ -1,10 +1,14 @@
 
 # Stats 506, Fall 2019
-# Group Project - Group 3
+## Group Project - Group 3
+
+**Author: Wenjing Li**
+
+**Date: Dec.11, 2019**
 
  This script analyzes the question:
  
-**"Do people diagnosed with diabetes consume less calories in US?"**
+**"Do people diagnosed with diabetes consume fewer calories in US?"**
 
 NHANES 2015-2016 data are used in this problem.
 
@@ -81,12 +85,9 @@ Include data with confirmed diabetes diagnosis
 
 
 ```python
-# Better to specify the values we want to include, instead of exclusion
-# in case there is missing - but okay in this analysis
+# Diabetes yes/no/borderline
 diabetes_in = [1, 2, 3]
 merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
-#merge_3 = merge_3[merge_3.DIQ010 != 7 ]
-#merge_3 = merge_3[merge_3.DIQ010 != 9 ]
 ```
 
 Exclude pregnant participants
@@ -239,7 +240,7 @@ plt.show()
 ```
 
 
-![](Figs/hist_day1.png)
+![png](Group_project_stats506_files/Group_project_stats506_30_0.png)
 
 
 Day 2 Total Energy (kcal)
@@ -252,7 +253,7 @@ plt.show()
 ```
 
 
-![png](Figs/hist_day2.png)
+![png](Group_project_stats506_files/Group_project_stats506_32_0.png)
 
 
 **Conclusion**: Approximately normal - no need to transform the response variable.
@@ -357,8 +358,8 @@ print(results.summary())
     Dep. Variable:                      y   R-squared:                       0.095
     Model:                            OLS   Adj. R-squared:                  0.094
     Method:                 Least Squares   F-statistic:                     120.7
-    Date:                Tue, 10 Dec 2019   Prob (F-statistic):          8.08e-122
-    Time:                        10:48:47   Log-Likelihood:                -47383.
+    Date:                Wed, 11 Dec 2019   Prob (F-statistic):          8.08e-122
+    Time:                        21:55:47   Log-Likelihood:                -47383.
     No. Observations:                5752   AIC:                         9.478e+04
     Df Residuals:                    5746   BIC:                         9.482e+04
     Df Model:                           5                                         
@@ -443,9 +444,45 @@ print(mixed_fit.summary())
     
 
 
+Prediction at population mean, by diabetes and gender
+
 
 ```python
-#mixed_fit.random_effects
+# prediction for person who has diabetes
+diabetes = 1
+## for man
+male = 1
+pre_1 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+## for woman
+male = 0
+pre_2 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+
+# prediction for person who doesn't have diabetes
+diabetes = 0
+## for man
+male = 1
+pre_3 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+## for woman
+male = 0
+pre_4 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
 ```
 
-Marginal effect
+
+```python
+print('In the population mean, the estimated calorie intake for men diagnosed with diabetes is :', round(pre_1, 2),'\n' \
+      'In the population mean, the estimated calorie intake for women diagnosed with diabetes is :', round(pre_2, 2),'\n' \
+      'In the population mean, the estimated calorie intake for men without diabetes is :', round(pre_3, 2),'\n' \
+      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2),'\n' \
+     )
+```
+
+    In the population mean, the estimated calorie intake for men diagnosed with diabetes is : 2194.44 
+    In the population mean, the estimated calorie intake for women diagnosed with diabetes is : 1655.97 
+    In the population mean, the estimated calorie intake for men without diabetes is : 2295.6 
+    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12 
+    
+
