@@ -1,6 +1,6 @@
 ## Group project - R
 ##
-## Question: Do people diagnosed with diabetes consume less calories in the US?
+## Question: Do people diagnosed with diabetes consume fewer calories in the US?
 ##
 ## Author: Bei An (anbei@umich.edu)
 ## Updated: Dec 11, 2019
@@ -106,8 +106,9 @@ ggplot(dr1_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr1_final$kcal), 
                             sd = sd(dr1_final$kcal))) + 
-  labs(title = "Day 1", x = "Total Energy (kcal)", y = "Frequency") + 
-  theme_bw()
+  labs(title = "Histogram of kcal (Day 1)", x = "Total Energy (kcal)", y = "Frequency") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
 
 # day2
 # hist(dm_final[dm_final$day==2, ]$kcal, breaks = 100, main = "Day 2")
@@ -119,15 +120,19 @@ ggplot(dr2_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr2_final$kcal), 
                             sd = sd(dr2_final$kcal))) + 
-  labs(title = "Day 2", x = "Total Energy (kcal)", y = "Frequency") + 
-  theme_bw()
+  labs(title = "Histogram of kcal (Day 2)", x = "Total Energy (kcal)", y = "Frequency") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
 
 # qqplots for day 1 and day 2
-par(mfrow=c(2,1))
-qqnorm(dr1_final$kcal, main = "Day 1")
-qqline(dr1_final$kcal, col = "blue", lwd = 2)
-qqnorm(dr2_final$kcal, main = "Day 2")
-qqline(dr2_final$kcal, col = "blue", lwd = 2)
+dm_final %>% 
+  ggplot(aes(sample = kcal)) + 
+  stat_qq(color = "blue") + 
+  stat_qq_line(color = "red") + 
+  facet_grid(rows = vars(day)) + 
+  labs(title = "QQ plot for kcal by day") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
 
 # `kcal` seems to be approximately normal with a longer right tail 
 # for both day1 and day2.
@@ -139,7 +144,10 @@ model = dr1_final %>% lm(formula = kcal ~ age + sed_act + bmi + factor(diabetes)
 summary(model)
 faraway::vif(model)
 cor1 = cor(dr1_final[, c("age", "sed_act", "bmi", "diabetes", "male")])
-corrplot(cor1)
+corrplot(cor1, 
+         type = "upper", 
+         title = "Correlation plot of covariates", 
+         mar = c(0, 0, 1, 0))
 # No collinearity found.
 
 # for the benefit of model fitting, convert `diabetes` and `male` into factor variables
@@ -153,4 +161,8 @@ summary(model2)
 
 # Predicted total energy intake at population mean
 me = ggpredict(model2, c("diabetes","male"))
-plot(me, dodge = 0)
+plot(me, dodge = 0) + 
+  labs(title = "Predicted total calories by diabetes and gender", 
+       x = "Diabetes (0 = No, 1 = Yes)", 
+       y = "Total Energy (kcal)") +
+  theme(plot.title = element_text(hjust = 0.5))
