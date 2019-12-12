@@ -24,7 +24,7 @@ Hence, the research question we are going to answer in this report is:
 
 We found it to be an interesting question and worth studying, given the high prevalence of diabetes and the importance of diet control in diabetes self-management.  
 
-We plan to use National Health and Nutrition Examination Survey (NHANES) data, and fit a Linear Mixed Model(LMM) to analyze the effect of diabetes diagnosis on an individual's daily consumption of total calories, controling for other covariates. The LMM result will give us information on the calorie intake difference among people with and without diabetes.
+We plan to use National Health and Nutrition Examination Survey (NHANES) data, and fit a Linear Mixed Model (LMM) to analyze the effect of diabetes diagnosis on an individual's daily consumption of total calories, controling for other covariates. The LMM result will give us information on the calorie intake difference among people with and without diabetes.
 
 
 ## Data  
@@ -1321,7 +1321,7 @@ dm_final %>%
 
 We also provide predicted consumption of daily total calories by diabetes and gender in the below table and figure. 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, fig.align = "center"}
 me = ggpredict(model2, c("diabetes","male"))
 
 # Table 
@@ -1345,7 +1345,11 @@ tibble(diabetes = c("Non-diabetes", "Non-diabetes", "Diabetes", "Diabetes"),
   column_spec(1, bold = TRUE)
   
 # Figure
-plot(me, dodge = 0)
+plot(me, dodge = 0) + 
+  labs(title = "Predicted total calories by diabetes and gender", 
+       x = "Diabetes (0 = No, 1 = Yes)", 
+       y = "Total Energy (kcal)") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
