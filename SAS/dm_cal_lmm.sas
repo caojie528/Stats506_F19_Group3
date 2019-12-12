@@ -230,6 +230,7 @@ run;
 proc univariate data = dm_cal;
 	var tot_cal;
 	histogram tot_cal / normal;
+	qqplot tot_cal / normal(mu = est sigma = est color = red l = 2);
 	class day;
 run;
 * Approximatley normal, no transformation needed;
