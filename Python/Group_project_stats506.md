@@ -90,7 +90,6 @@ Include data with confirmed diabetes diagnosis
 
 ```python
 # Better to specify the values we want to include, instead of exclusion
-# in case there is missing - but okay in this analysis
 diabetes_in = [1, 2, 3]
 merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
 ```
@@ -264,7 +263,7 @@ plt.show()
 ```
 
 
-![png](output_32_0.png)
+![png](Figs/hist_day1.png)
 
 
 We can also use QQ-Plot to check the normality of the response variable.
@@ -288,7 +287,7 @@ pylab.show()
 ```
 
 
-![png](output_34_0.png)
+![png](Figs/qq_plot.png)
 
 
 **Conclusion**: Approximately normal - no need to transform the response variable.
@@ -313,16 +312,22 @@ predictors.corr()
     }
 
     .dataframe tbody tr th {
-        vertical-align: top;
+        vertical-align: middle;
     }
 
     .dataframe thead th {
-        text-align: right;
+        text-align: left;
     }
 </style>
 <table border="1" class="dataframe">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
   <thead>
-    <tr style="text-align: right;">
+    <tr style="text-align: middle;">
       <th></th>
       <th>BMXBMI</th>
       <th>PAD680</th>
@@ -483,7 +488,7 @@ print(mixed_fit.summary())
     
     
 
-Marginal effect
+Prediction at population mean, by diabetes and gender
 
 
 ```python
