@@ -8,4 +8,4 @@ Bei An (anbei@umich.edu)
 
 ## Software
 
-RStudio
+R, RStudio
