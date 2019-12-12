@@ -44,12 +44,12 @@ DEMO_I | Demographics | RIDEXPRG | Pregnancy status at exam | Numeric
 DR1TOT_I | Total Nutrient Intakes<br> First Day | DR1TKCAL | Energy (kcal) | Numeric
 DR2TOT_I | Total Nutrient Intakes<br> Second Day |DR2TKCAL | Energy (kcal) | Numeric
 [**Examination data**](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&CycleBeginYear=2015) | | |
-BMI_I | Body Measurement | BMXBMI | Body Mass Index (kg/m$^2$) | Numeric
+BMX_I | Body Measurement | BMXBMI | Body Mass Index (kg/m$^2$) | Numeric
 [**Questionnaire data**](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Questionnaire&CycleBeginYear=2015) | | |
 DIQ_I | Diabetes | DIQ010 | Doctor told you have diabetes | Numeric
 PAQ_I | Physical Activity | PAD615 | Minutes vigorous-intensity work | Numeric
-PAD_I | Physical Activity | PAD630 | Minutes moderate-intensity work | Numeric
-PAD_I | Physical Activity | PAD680 | Minutes sedentary activity | Numeric
+PAQ_I | Physical Activity | PAD630 | Minutes moderate-intensity work | Numeric
+PAQ_I | Physical Activity | PAD680 | Minutes sedentary activity | Numeric
 
 
 
@@ -1294,12 +1294,12 @@ We found an interesting warning message in Python analysis section, when we were
     
     *<mark style="background-color: yellow">[2] The condition number is large, 4.59e+03. This might indicate that there are strong multicollinearity or other numerical problems.</mark>*
 
-This is in contrast to the conclusion in R and SAS analysis sections. The correlation matrix, VIFs and eigenvalues/condition numbers inspection all agree with each other that no multicollinearity issue is found. Our Python analysis gave the same correlation matrix and VIFs as those where done in R and SAS. Therefore, we suspect Python package `statsmodels` uses a different strategy to obtain condition numbers. Interestingly, we found a similar [question](https://stats.stackexchange.com/questions/243000/cause-of-a-high-condition-number-in-a-python-statsmodels-regression) raised on StackExchange. There are also two open issesue ([#553](https://github.com/statsmodels/statsmodels/issues/553) and [#2378](https://github.com/statsmodels/statsmodels/issues/2378)) on statsmodels' Github page. It seems that `statsmodels` report condition number as a ratio of largest to smallest eigenvalue, rather than one condition index for one eigenvalue reported by R or SAS. Hence, the high condition number may be due to scaling, not a true indicator of multicollinearity.  
+This is in contrast to the conclusion in R and SAS analysis sections. The correlation matrix, VIFs and eigenvalues/condition numbers inspection all agree with each other that no multicollinearity issue is found. Our Python analysis gave the same correlation matrix and VIFs as those where done in R and SAS. Therefore, we suspect Python package `statsmodels` uses a different strategy to obtain condition numbers. Interestingly, we found a similar [question](https://stats.stackexchange.com/questions/243000/cause-of-a-high-condition-number-in-a-python-statsmodels-regression) raised on StackExchange. There are also two open issues ([#553](https://github.com/statsmodels/statsmodels/issues/553) and [#2378](https://github.com/statsmodels/statsmodels/issues/2378)) on statsmodels' Github page. It seems that `statsmodels` report condition number as a ratio of largest to smallest eigenvalue, rather than one condition index for one eigenvalue reported by R or SAS. Hence, the high condition number may be due to scaling, not a true indicator of multicollinearity.  
 
 
 ### Difference in Prediction
 
-Another interesting finding in our report is the difference in prediction of total calorie intake between R `ggpredict` function and SAS `lsmeans` in `proc mixed`. We intended to predict the total calorie intake by diabetes status and gender, while holding other continuous covariates at population means. We did not find a good tool to generate this prediction together with standard error/confidence interval automatically in Python, other than manual calcualtion. Hence, we only report findings from R and SAS, and used Python manual calculation as a verification. We have summarised our explanation below: 
+Another interesting finding in our report is the difference in prediction of total calorie intake between R `ggpredict` function and SAS `lsmeans` in `proc mixed`. We intended to predict the total calorie intake by diabetes status and gender, while holding other continuous covariates at population means. We did not find a good tool to generate this prediction together with standard error/confidence interval automatically in Python, other than manual calculation. Hence, we only report findings from R and SAS, and used Python manual calculation as a verification. We have summarised our explanation below: 
 
 Both methods gave the same population means (as shown in Table 3) for age, BMI and sedentary activity. The difference is that:
 
@@ -1307,7 +1307,7 @@ R `ggpredict` then predicts the total calorie intake for the 4 scenarios by taki
 
 SAS `lsmeans` predicts the total calorie intake for the 4 scenarios by counting for diabetes or gender separately over a balanced population, i.e. predict the total calorie intake when a. non-diabetes (diabetes = 0) with half female and half male, b. diabetes (diabetes = 1) with half female and half male, c. female (male = 0) with half diabetes and half non-diabetes, and d. male (male = 1) with half diabetes and half non-diabetes. 
 
-While it is close to truth that the gender distribution is balanced, it is unreasonable to assume balanced diabetes status in the population. Hence, we decide to report R `ggpredict` results in our Table 4. 
+While it is close to the truth that the gender distribution is balanced, it is unreasonable to assume balanced diabetes status in the population. Hence, we decide to report R `ggpredict` results in our Table 4. 
 
 
 **Thoughts**: Based on two discussions we have above, in our example, R and SAS appear to be more powerful tools in statistical analysis than Python. It's likely because Python was developed for general-purpose, while both R and SAS were developed specifically for statistical computing. 

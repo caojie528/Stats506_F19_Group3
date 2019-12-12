@@ -1613,7 +1613,7 @@ div.tocify {
 <td></td>
 </tr>
 <tr class="even">
-<td>BMI_I</td>
+<td>BMX_I</td>
 <td>Body Measurement</td>
 <td>BMXBMI</td>
 <td>Body Mass Index (kg/m<span class="math inline">\(^2\)</span>)</td>
@@ -1641,14 +1641,14 @@ div.tocify {
 <td>Numeric</td>
 </tr>
 <tr class="even">
-<td>PAD_I</td>
+<td>PAQ_I</td>
 <td>Physical Activity</td>
 <td>PAD630</td>
 <td>Minutes moderate-intensity work</td>
 <td>Numeric</td>
 </tr>
 <tr class="odd">
-<td>PAD_I</td>
+<td>PAQ_I</td>
 <td>Physical Activity</td>
 <td>PAD680</td>
 <td>Minutes sedentary activity</td>
@@ -1924,10 +1924,10 @@ dm = dm %&gt;%
 
 # check for missing values for each variable
 colSums(is.na(dm))</code></pre>
-<pre><code>##      SEQN       age    gender pregnancy    DIQ010  vig_work  mod_work 
-##         0         0         0     16566         0     16312     13884 
-##   sed_act       bmi  diabetes      male       day      kcal 
-##      5248      1636         0         0         0      4314</code></pre>
+<pre><code>##      SEQN       age    gender pregnancy    DIQ010  vig_work  mod_work   sed_act 
+##         0         0         0     16566         0     16312     13884      5248 
+##       bmi  diabetes      male       day      kcal 
+##      1636         0         0         0      4314</code></pre>
 <p><code>vig_work</code> and <code>mod_work</code> have much more missing values than other variables, so it is reasonable to remove them from the data frame.<br />
 <code>pregnancy</code> can also be removed since we only need this variable to filter out pregnant individuals.<br />
 <code>DIQ010</code> and <code>gender</code> are now redundant due to the new variables.</p>
@@ -2989,15 +2989,15 @@ Diabetes
 <p><em>Warnings:</em></p>
 <p><em>[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.</em></p>
 <p><em><mark style="background-color: yellow">[2] The condition number is large, 4.59e+03. This might indicate that there are strong multicollinearity or other numerical problems.</mark></em></p>
-<p>This is in contrast to the conclusion in R and SAS analysis sections. The correlation matrix, VIFs and eigenvalues/condition numbers inspection all agree with each other that no multicollinearity issue is found. Our Python analysis gave the same correlation matrix and VIFs as those where done in R and SAS. Therefore, we suspect Python package <code>statsmodels</code> uses a different strategy to obtain condition numbers. Interestingly, we found a similar <a href="https://stats.stackexchange.com/questions/243000/cause-of-a-high-condition-number-in-a-python-statsmodels-regression">question</a> raised on StackExchange. There are also two open issesue (<a href="https://github.com/statsmodels/statsmodels/issues/553">#553</a> and <a href="https://github.com/statsmodels/statsmodels/issues/2378">#2378</a>) on statsmodels’ Github page. It seems that <code>statsmodels</code> report condition number as a ratio of largest to smallest eigenvalue, rather than one condition index for one eigenvalue reported by R or SAS. Hence, the high condition number may be due to scaling, not a true indicator of multicollinearity.</p>
+<p>This is in contrast to the conclusion in R and SAS analysis sections. The correlation matrix, VIFs and eigenvalues/condition numbers inspection all agree with each other that no multicollinearity issue is found. Our Python analysis gave the same correlation matrix and VIFs as those where done in R and SAS. Therefore, we suspect Python package <code>statsmodels</code> uses a different strategy to obtain condition numbers. Interestingly, we found a similar <a href="https://stats.stackexchange.com/questions/243000/cause-of-a-high-condition-number-in-a-python-statsmodels-regression">question</a> raised on StackExchange. There are also two open issues (<a href="https://github.com/statsmodels/statsmodels/issues/553">#553</a> and <a href="https://github.com/statsmodels/statsmodels/issues/2378">#2378</a>) on statsmodels’ Github page. It seems that <code>statsmodels</code> report condition number as a ratio of largest to smallest eigenvalue, rather than one condition index for one eigenvalue reported by R or SAS. Hence, the high condition number may be due to scaling, not a true indicator of multicollinearity.</p>
 </div>
 <div id="difference-in-prediction" class="section level3">
 <h3>Difference in Prediction</h3>
-<p>Another interesting finding in our report is the difference in prediction of total calorie intake between R <code>ggpredict</code> function and SAS <code>lsmeans</code> in <code>proc mixed</code>. We intended to predict the total calorie intake by diabetes status and gender, while holding other continuous covariates at population means. We did not find a good tool to generate this prediction together with standard error/confidence interval automatically in Python, other than manual calcualtion. Hence, we only report findings from R and SAS, and used Python manual calculation as a verification. We have summarised our explanation below:</p>
+<p>Another interesting finding in our report is the difference in prediction of total calorie intake between R <code>ggpredict</code> function and SAS <code>lsmeans</code> in <code>proc mixed</code>. We intended to predict the total calorie intake by diabetes status and gender, while holding other continuous covariates at population means. We did not find a good tool to generate this prediction together with standard error/confidence interval automatically in Python, other than manual calculation. Hence, we only report findings from R and SAS, and used Python manual calculation as a verification. We have summarised our explanation below:</p>
 <p>Both methods gave the same population means (as shown in Table 3) for age, BMI and sedentary activity. The difference is that:</p>
 <p>R <code>ggpredict</code> then predicts the total calorie intake for the 4 scenarios by taking diabetes and gender into account together, i.e. predict the total calorie intake when a. non-diabetes (diabetes = 0), female (male = 0), b. non-diabetes (diabetes = 0), male (male = 1), c. diabetes (diabetes = 1), female (male = 0), and d. diabetes (diabetes = 1), male (male = 1). We used the same strategy and manually calculated the prediction in Python to verify the results.</p>
 <p>SAS <code>lsmeans</code> predicts the total calorie intake for the 4 scenarios by counting for diabetes or gender separately over a balanced population, i.e. predict the total calorie intake when a. non-diabetes (diabetes = 0) with half female and half male, b. diabetes (diabetes = 1) with half female and half male, c. female (male = 0) with half diabetes and half non-diabetes, and d. male (male = 1) with half diabetes and half non-diabetes.</p>
-<p>While it is close to truth that the gender distribution is balanced, it is unreasonable to assume balanced diabetes status in the population. Hence, we decide to report R <code>ggpredict</code> results in our Table 4.</p>
+<p>While it is close to the truth that the gender distribution is balanced, it is unreasonable to assume balanced diabetes status in the population. Hence, we decide to report R <code>ggpredict</code> results in our Table 4.</p>
 <p><strong>Thoughts</strong>: Based on two discussions we have above, in our example, R and SAS appear to be more powerful tools in statistical analysis than Python. It’s likely because Python was developed for general-purpose, while both R and SAS were developed specifically for statistical computing.</p>
 </div>
 </div>
