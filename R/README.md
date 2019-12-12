@@ -9,9 +9,3 @@ Bei An (anbei@umich.edu)
 ## Software
 
 RStudio
-
-## To do
-
-Add more comments explaining the steps  
-Marginal effect (main effect)  
-Create plots with the models  
