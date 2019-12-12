@@ -12,7 +12,11 @@ Wenjing Li (lwenjing@umich.edu)
 
 ## Research Question
 
-Do people diagnosed with diabetes consume less calories in the U.S.? 
+Do people diagnosed with diabetes consume fewer calories in the U.S.? 
+
+## Model
+
+Linear mixed model
 
 ## Softwares/Tools
 
@@ -22,20 +26,10 @@ SAS - Jie Cao
 
 Python - Wenjing Li  
 
-## To Do
-
-Code review to make analysis parallel and consistent  
-
-Code review for styling purpose  
-
-Report formatting  
-
-Add tables/figures generated from the analysis to repo and insert into the final report  
-
 ## Collaboration style
 
 Proposal and analysis plan were discussed offline and shared via Google Drive
 
-Code review will be done using *Issues* and *Pull requests* as instructed in class
+Code review was doen using *Issues* and *Pull requests* on Github
 
-Final report was put together by all three members offline, and Jie Cao takes the responsibility centralize it and publish to the repo
+Final report was discussed and put together by all three members offline, and Jie Cao takes the responsibility centralize and publish it
