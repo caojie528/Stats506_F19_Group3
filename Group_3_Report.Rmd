@@ -579,12 +579,15 @@ NOTE: The data set WORK.DM_CAL has 13172 observations and 10 variables.
 proc univariate data = dm_cal;
 	var tot_cal;
 	histogram tot_cal / normal;
+	qqplot tot_cal / normal(mu = est sigma = est color = red l = 2);
 	class day;
 run;
 ```
 
 <div align=center> 
 ![](SAS/Figs/hist_tot_cal.PNG)
+
+![](SAS/Figs/qqplot.PNG)
 </div>
 
 **Conclusion**: The response variable (total energy) approximately follows normal distribution, thus, no transformation is needed. 
@@ -682,22 +685,23 @@ run;
 
 
 
-
 #### Stats 506, Fall 2019
 ##### Group Project - Group 3
 
 **Author: Wenjing Li**
 
-**Date: Dec.11, 2019**
+**Last Update Date: Dec.11, 2019**
+
+
 
  This script analyzes the question:
  
-**"Do people diagnosed with diabetes consume fewer calories in US?"**
+**"Do people diagnosed with diabetes consume less calories in US?"**
 
 NHANES 2015-2016 data are used in this problem.
 
 
-##### Import packages
+#### Import packages
 
 
 ```python
@@ -707,11 +711,13 @@ from scipy import stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
+import pylab
+import scipy.stats as stats
 from patsy import dmatrices
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 ```
 
-##### Read data
+#### Read data
 List of XPT files from NHANES 2015-2016 that we will use in this analysis.  
 
 DEMO_I - Demographics  
@@ -736,9 +742,9 @@ diq = pd.read_sas('../Data/DIQ_I.XPT')
 pad = pd.read_sas('../Data/PAQ_I.XPT')
 ```
 
-##### Merge data
+#### Merge data
 
-###### Select columns needed
+##### Select columns needed
 
 
 ```python
@@ -763,13 +769,13 @@ merge_2 = pd.merge(bmx_new, questionnaire, on='SEQN', how='outer')
 merge_3 = pd.merge(merge_2, demo_new, on='SEQN', how='outer')
 ```
 
-###### Inclusion/Exclusion
+##### Inclusion/Exclusion
 
 Include data with confirmed diabetes diagnosis
 
 
 ```python
-# Diabetes yes/no/borderline
+# Better to specify the values we want to include, instead of exclusion
 diabetes_in = [1, 2, 3]
 merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
 ```
@@ -805,7 +811,7 @@ merge_3.shape
 
 
 
-###### Variable recoding/creation
+##### Variable recoding/creation
 
 Binary **diabetes** variable:
 
@@ -864,7 +870,7 @@ for i in merge.day:
 merge['day'] = days
 ```
 
-###### Prepare final working datasets
+##### Prepare final working datasets
 
 
 ```python
@@ -912,13 +918,16 @@ final_day2.shape
 
 
 
-###### Check normality of response variable
+##### Check normality of response variable
 
 Day 1 Total Energy (kcal)
 
 
 ```python
 plt.hist(final_day1["y"], bins=100, density=1)
+plt.title('Density Distribution of Total Energy (day 1)')
+plt.xlabel('Energy (kcal)')
+plt.ylabel('Frequency')
 plt.savefig('./Figs/hist_day1.png')
 plt.show()
 ```
@@ -932,17 +941,44 @@ Day 2 Total Energy (kcal)
 
 ```python
 plt.hist(final_day2["y"], bins=100)
+plt.title('Density Distribution of Total Energy (day 2)')
+plt.xlabel('Energy (kcal)')
+plt.ylabel('Frequency')
 plt.savefig('./Figs/hist_day2.png')
 plt.show()
 ```
 
 
-![png](Python/Figs/hist_day1.png)
+![](Python/Figs/hist_day2.png)
+
+
+We can also use QQ-Plot to check the normality of the response variable.
+
+
+```python
+plt.subplot(211)
+# day 1 total energy
+stats.probplot(final_day1["y"], dist="norm", plot=pylab)
+plt.xlabel('')
+plt.ylabel('Sample quantiles')
+plt.title('Normal Q-Q Plot')
+plt.tick_params(axis='x', bottom=False, labelbottom=False)
+plt.subplot(212)
+# day 2 total energy
+stats.probplot(final_day2["y"], dist="norm", plot=pylab)
+plt.ylabel('Sample quantiles')
+plt.title('')
+plt.savefig('./Figs/qq_plot.png')
+pylab.show()
+```
+
+
+![](Python/Figs/qq_plot.png)
 
 
 **Conclusion**: Approximately normal - no need to transform the response variable.
 
-###### Check collinearity (use day 1 only)
+##### Check collinearity (use day 1 only)
 
 Correlation matrix of predictors
 
@@ -962,16 +998,22 @@ predictors.corr()
     }
 
     .dataframe tbody tr th {
-        vertical-align: top;
+        vertical-align: middle;
     }
 
     .dataframe thead th {
-        text-align: right;
+        text-align: left;
     }
 </style>
 <table border="1" class="dataframe">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
+  <col width = "100">
   <thead>
-    <tr style="text-align: right;">
+    <tr style="text-align: middle;">
       <th></th>
       <th>BMXBMI</th>
       <th>PAD680</th>
@@ -982,7 +1024,7 @@ predictors.corr()
   </thead>
   <tbody>
     <tr>
-      <th>BMXBMI</th>
+      <td>BMXBMI</td>
       <td>1.000000</td>
       <td>-0.010791</td>
       <td>0.242742</td>
@@ -990,7 +1032,7 @@ predictors.corr()
       <td>-0.088875</td>
     </tr>
     <tr>
-      <th>PAD680</th>
+      <td>PAD680</td>
       <td>-0.010791</td>
       <td>1.000000</td>
       <td>-0.034440</td>
@@ -998,7 +1040,7 @@ predictors.corr()
       <td>-0.017472</td>
     </tr>
     <tr>
-      <th>RIDAGEYR</th>
+      <td>RIDAGEYR</td>
       <td>0.242742</td>
       <td>-0.034440</td>
       <td>1.000000</td>
@@ -1006,7 +1048,7 @@ predictors.corr()
       <td>-0.009280</td>
     </tr>
     <tr>
-      <th>diabetes</th>
+      <td>diabetes</td>
       <td>0.222468</td>
       <td>-0.009275</td>
       <td>0.341760</td>
@@ -1014,7 +1056,7 @@ predictors.corr()
       <td>0.025974</td>
     </tr>
     <tr>
-      <th>male</th>
+      <td>male</td>
       <td>-0.088875</td>
       <td>-0.017472</td>
       <td>-0.009280</td>
@@ -1042,8 +1084,8 @@ print(results.summary())
     Dep. Variable:                      y   R-squared:                       0.095
     Model:                            OLS   Adj. R-squared:                  0.094
     Method:                 Least Squares   F-statistic:                     120.7
-    Date:                Wed, 11 Dec 2019   Prob (F-statistic):          8.08e-122
-    Time:                        21:55:47   Log-Likelihood:                -47383.
+    Date:                Thu, 12 Dec 2019   Prob (F-statistic):          8.08e-122
+    Time:                        00:07:27   Log-Likelihood:                -47383.
     No. Observations:                5752   AIC:                         9.478e+04
     Df Residuals:                    5746   BIC:                         9.482e+04
     Df Model:                           5                                         
@@ -1068,7 +1110,11 @@ print(results.summary())
     [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
     [2] The condition number is large, 4.59e+03. This might indicate that there are
     strong multicollinearity or other numerical problems.
+    
 
+    C:\Users\wenji\AppData\Local\Continuum\anaconda3\lib\site-packages\numpy\core\fromnumeric.py:2389: FutureWarning: Method .ptp is deprecated and will be removed in a future version. Use numpy.ptp instead.
+      return ptp(axis=axis, out=out, **kwargs)
+    
 
 Variance Infation Factor (VIF)
 
@@ -1086,16 +1132,16 @@ vif[1:] # No need to look at VIF for intercept
 
 
     [1.0980699620399632,
-     1.0015371700466498,
-     1.1722346969542117,
-     1.1618062474485058,
-     1.0105433137760211]
+     1.00153717004665,
+     1.172234696954212,
+     1.1618062474485054,
+     1.010543313776021]
 
 
 
 **Conclusion**: No collinearity issue.
 
-###### Linear mixed model for both days
+##### Linear mixed model for both days
 
 
 ```python
@@ -1126,7 +1172,7 @@ print(mixed_fit.summary())
     Group Var 292948.651   22.660                               
     ============================================================
     
-
+    
 
 Prediction at population mean, by diabetes and gender
 
@@ -1160,14 +1206,18 @@ pre_4 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*m
 print('In the population mean, the estimated calorie intake for men diagnosed with diabetes is :', round(pre_1, 2),'\n' \
       'In the population mean, the estimated calorie intake for women diagnosed with diabetes is :', round(pre_2, 2),'\n' \
       'In the population mean, the estimated calorie intake for men without diabetes is :', round(pre_3, 2),'\n' \
-      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2),'\n' \
-     )
+      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2))
 ```
 
     In the population mean, the estimated calorie intake for men diagnosed with diabetes is : 2194.44 
+    
     In the population mean, the estimated calorie intake for women diagnosed with diabetes is : 1655.97 
+    
     In the population mean, the estimated calorie intake for men without diabetes is : 2295.6 
-    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12 
+    
+    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12
+    
+
     
 
 
