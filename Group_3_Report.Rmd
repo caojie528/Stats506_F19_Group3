@@ -268,8 +268,9 @@ ggplot(dr1_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr1_final$kcal), 
                             sd = sd(dr1_final$kcal))) + 
-  labs(x = "Total Energy (kcal)", y = "Frequency") + 
-  theme_bw()
+  labs(title = "Histogram of kcal (Day 1)", x = "Total Energy (kcal)", y = "Frequency") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
 # day2
 ggplot(dr2_final, aes(x = kcal)) + 
   geom_histogram(aes(y = ..density..), 
@@ -279,12 +280,28 @@ ggplot(dr2_final, aes(x = kcal)) +
   stat_function(fun = dnorm, 
                 args = list(mean = mean(dr2_final$kcal), 
                             sd = sd(dr2_final$kcal))) + 
-  labs(x = "Total Energy (kcal)", y = "Frequency") + 
-  theme_bw()
+  labs(title = "Histogram of kcal (Day 2)", x = "Total Energy (kcal)", y = "Frequency") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
+```
+
+We can also use QQ plot to examine the normality. 
+
+```{r, warning = FALSE}
+# qqplots for day 1 and day 2
+dm_final %>% 
+  ggplot(aes(sample = kcal)) + 
+  stat_qq(color = "blue") + 
+  stat_qq_line(color = "red") + 
+  facet_grid(rows = vars(day)) + 
+  labs(title = "QQ plot for kcal by day") + 
+  theme(plot.title = element_text(hjust = 0.5), 
+        panel.background = element_rect(fill = "transparent"))
 ```
 
 
-`kcal` seems to be approximately normal with a longer right tail for both day1 and day2.
+Overall `kcal` seems to be approximately normal with a longer right tail for both day1 and day2. There is not much concern about the normality. 
+
 In this case, no transformation would be needed.
 
 
@@ -297,7 +314,10 @@ summary(model)
 faraway::vif(model)
 cor1 = cor(dr1_final[, c("age", "sed_act", "bmi", "diabetes", "male")])
 cor1
-corrplot(cor1)
+corrplot(cor1, 
+         type = "upper", 
+         title = "Correlation plot of covariates", 
+         mar = c(0, 0, 1, 0))
 ```
 
 
@@ -315,7 +335,11 @@ summary(model2)
 ```{r}
 # Predicted total energy intake at population mean
 me = ggpredict(model2, c("diabetes","male"))
-plot(me, dodge = 0)
+plot(me, dodge = 0) + 
+  labs(title = "Predicted total calories by diabetes and gender", 
+       x = "Diabetes (0 = No, 1 = Yes)", 
+       y = "Total Energy (kcal)") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
