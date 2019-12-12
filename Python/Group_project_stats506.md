@@ -4,11 +4,13 @@
 
 **Author: Wenjing Li**
 
-**Date: Dec.11, 2019**
+**Last Update Date: Dec.11, 2019**
+
+
 
  This script analyzes the question:
  
-**"Do people diagnosed with diabetes consume fewer calories in US?"**
+**"Do people diagnosed with diabetes consume less calories in US?"**
 
 NHANES 2015-2016 data are used in this problem.
 
@@ -23,6 +25,8 @@ from scipy import stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
+import pylab
+import scipy.stats as stats
 from patsy import dmatrices
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 ```
@@ -85,7 +89,8 @@ Include data with confirmed diabetes diagnosis
 
 
 ```python
-# Diabetes yes/no/borderline
+# Better to specify the values we want to include, instead of exclusion
+# in case there is missing - but okay in this analysis
 diabetes_in = [1, 2, 3]
 merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
 ```
@@ -235,12 +240,15 @@ Day 1 Total Energy (kcal)
 
 ```python
 plt.hist(final_day1["y"], bins=100, density=1)
+plt.title('Density Distribution of Total Energy (day 1)')
+plt.xlabel('Energy (kcal)')
+plt.ylabel('Frequency')
 plt.savefig('./Figs/hist_day1.png')
 plt.show()
 ```
 
 
-![png](Group_project_stats506_files/Group_project_stats506_30_0.png)
+![png](output_30_0.png)
 
 
 Day 2 Total Energy (kcal)
@@ -248,12 +256,39 @@ Day 2 Total Energy (kcal)
 
 ```python
 plt.hist(final_day2["y"], bins=100)
+plt.title('Density Distribution of Total Energy (day 2)')
+plt.xlabel('Energy (kcal)')
+plt.ylabel('Frequency')
 plt.savefig('./Figs/hist_day2.png')
 plt.show()
 ```
 
 
-![png](Group_project_stats506_files/Group_project_stats506_32_0.png)
+![png](output_32_0.png)
+
+
+We can also use QQ-Plot to check the normality of the response variable.
+
+
+```python
+plt.subplot(211)
+# day 1 total energy
+stats.probplot(final_day1["y"], dist="norm", plot=pylab)
+plt.xlabel('')
+plt.ylabel('Sample quantiles')
+plt.title('Normal Q-Q Plot')
+plt.tick_params(axis='x', bottom=False, labelbottom=False)
+plt.subplot(212)
+# day 2 total energy
+stats.probplot(final_day2["y"], dist="norm", plot=pylab)
+plt.ylabel('Sample quantiles')
+plt.title('')
+plt.savefig('./Figs/qq_plot.png')
+pylab.show()
+```
+
+
+![png](output_34_0.png)
 
 
 **Conclusion**: Approximately normal - no need to transform the response variable.
@@ -298,7 +333,7 @@ predictors.corr()
   </thead>
   <tbody>
     <tr>
-      <th>BMXBMI</th>
+      <td>BMXBMI</td>
       <td>1.000000</td>
       <td>-0.010791</td>
       <td>0.242742</td>
@@ -306,7 +341,7 @@ predictors.corr()
       <td>-0.088875</td>
     </tr>
     <tr>
-      <th>PAD680</th>
+      <td>PAD680</td>
       <td>-0.010791</td>
       <td>1.000000</td>
       <td>-0.034440</td>
@@ -314,7 +349,7 @@ predictors.corr()
       <td>-0.017472</td>
     </tr>
     <tr>
-      <th>RIDAGEYR</th>
+      <td>RIDAGEYR</td>
       <td>0.242742</td>
       <td>-0.034440</td>
       <td>1.000000</td>
@@ -322,7 +357,7 @@ predictors.corr()
       <td>-0.009280</td>
     </tr>
     <tr>
-      <th>diabetes</th>
+      <td>diabetes</td>
       <td>0.222468</td>
       <td>-0.009275</td>
       <td>0.341760</td>
@@ -330,7 +365,7 @@ predictors.corr()
       <td>0.025974</td>
     </tr>
     <tr>
-      <th>male</th>
+      <td>male</td>
       <td>-0.088875</td>
       <td>-0.017472</td>
       <td>-0.009280</td>
@@ -358,8 +393,8 @@ print(results.summary())
     Dep. Variable:                      y   R-squared:                       0.095
     Model:                            OLS   Adj. R-squared:                  0.094
     Method:                 Least Squares   F-statistic:                     120.7
-    Date:                Wed, 11 Dec 2019   Prob (F-statistic):          8.08e-122
-    Time:                        21:55:47   Log-Likelihood:                -47383.
+    Date:                Thu, 12 Dec 2019   Prob (F-statistic):          8.08e-122
+    Time:                        00:07:27   Log-Likelihood:                -47383.
     No. Observations:                5752   AIC:                         9.478e+04
     Df Residuals:                    5746   BIC:                         9.482e+04
     Df Model:                           5                                         
@@ -384,7 +419,11 @@ print(results.summary())
     [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
     [2] The condition number is large, 4.59e+03. This might indicate that there are
     strong multicollinearity or other numerical problems.
+    
 
+    C:\Users\wenji\AppData\Local\Continuum\anaconda3\lib\site-packages\numpy\core\fromnumeric.py:2389: FutureWarning: Method .ptp is deprecated and will be removed in a future version. Use numpy.ptp instead.
+      return ptp(axis=axis, out=out, **kwargs)
+    
 
 Variance Infation Factor (VIF)
 
@@ -402,10 +441,10 @@ vif[1:] # No need to look at VIF for intercept
 
 
     [1.0980699620399632,
-     1.0015371700466498,
-     1.1722346969542117,
-     1.1618062474485058,
-     1.0105433137760211]
+     1.00153717004665,
+     1.172234696954212,
+     1.1618062474485054,
+     1.010543313776021]
 
 
 
@@ -442,9 +481,9 @@ print(mixed_fit.summary())
     Group Var 292948.651   22.660                               
     ============================================================
     
+    
 
-
-Prediction at population mean, by diabetes and gender
+Marginal effect
 
 
 ```python
@@ -476,13 +515,11 @@ pre_4 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*m
 print('In the population mean, the estimated calorie intake for men diagnosed with diabetes is :', round(pre_1, 2),'\n' \
       'In the population mean, the estimated calorie intake for women diagnosed with diabetes is :', round(pre_2, 2),'\n' \
       'In the population mean, the estimated calorie intake for men without diabetes is :', round(pre_3, 2),'\n' \
-      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2),'\n' \
-     )
+      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2))
 ```
 
     In the population mean, the estimated calorie intake for men diagnosed with diabetes is : 2194.44 
     In the population mean, the estimated calorie intake for women diagnosed with diabetes is : 1655.97 
     In the population mean, the estimated calorie intake for men without diabetes is : 2295.6 
-    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12 
+    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12
     
-
