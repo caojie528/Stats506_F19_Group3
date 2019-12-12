@@ -50,4 +50,4 @@ Proposal and analysis plan were discussed offline and shared via Google Drive
 
 Code review was doen using *Issues* and *Pull requests* on Github
 
-Final report was discussed and put together by all three members offline, and Jie Cao takes the responsibility centralize and publish it
+Final report was discussed and put together by all three members offline, and Jie Cao takes the responsibility to centralize and publish it
