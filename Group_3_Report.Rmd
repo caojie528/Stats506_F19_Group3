@@ -1,5 +1,5 @@
 ---
-title: "Group_3_Report"
+title: "Group Project Report, Stats 506, F19"
 author: "Bei An, Jie Cao, Wenjing Li"
 date: "`r format.Date(Sys.Date(), '%B %d, %Y')`"
 output: 
@@ -16,15 +16,15 @@ library(kableExtra)
 
 ## Introduction
 
-Diabetes is a major public health concern in the United State. An estimated 30.3 million people in the U.S., or 9.4% of the population, have diabetes [1]. It also imposes substantial burden on society, provided that the total estimated cost of diagnosed diabetes in 2017 was \$327 billion, including \$237 billion in direct medical costs and \$90 billion in reduced productivity [2]. As a management of diabetes, people who are diagnosed with diabetes are advised to control their diet and choose foods that are lower in calories for their health [3]. However, it is unclear if people in the U.S. literally follow this guideline. 
+Diabetes is a major public health concern in the United State. An estimated 30.3 million people in the U.S., or 9.4% of the population, have diabetes [1]. It also imposes a substantial burden on society, provided that the total estimated cost of diagnosed diabetes in 2017 was \$327 billion, including \$237 billion in direct medical costs and \$90 billion in reduced productivity [2]. As a management of diabetes, people who are diagnosed with diabetes are advised to control their diet and choose foods that are lower in calories for their health [3]. However, it is unclear if people in the U.S. actually follow this guideline. 
 
 Hence, the research question we are going to answer in this report is:
 
-**Do people diagnosed with diabetes consume less calories in the United States?** 
+**Do people diagnosed with diabetes consume fewer calories in the United States?** 
 
 We found it to be an interesting question and worth studying, given the high prevalence of diabetes and the importance of diet control in diabetes self-management.  
 
-We plan to use National Health and Nutrition Examination Survey (NHANES) data, and fit a Linear Mixed Model(LMM) to analyze the effect of diabetes diagnosis on an individual's daily consumption of total calories, controling for other covariates. The LMM result will give us information on the calories intake difference among people with and without diabetes.
+We plan to use National Health and Nutrition Examination Survey (NHANES) data, and fit a Linear Mixed Model(LMM) to analyze the effect of diabetes diagnosis on an individual's daily consumption of total calories, controling for other covariates. The LMM result will give us information on the calorie intake difference among people with and without diabetes.
 
 
 ## Data  
@@ -56,7 +56,7 @@ PAD_I | Physical Activity | PAD680 | Minutes sedentary activity | Numeric
 ## Methods  
 
 ### Model
-Linear mixed model (LMM) is an extension of simple linear model to include both fixed and random effects. It is particular useful when there is non independence in the data [4]. In NHANES data, participants were interviewed for dietary intake on two different days, thus the total calories intake data for the same respondent is not independent. Hence, we fitted an LMM to analyze the effect of diabetes diagnosis on consumption of total calories from both interview days, controlling for demographics, BMI and physical activity, and including a random intercept for each respondent.
+Linear mixed model (LMM) is an extension of simple linear model to include both fixed and random effects. It is particular useful when there is non independence in the data [4]. In NHANES data, participants were interviewed for dietary intake on two different days, thus the total calorie intake data for the same respondent is not independent. Hence, we fitted an LMM to analyze the effect of diabetes diagnosis on consumption of total calories from both interview days, controlling for demographics, BMI and physical activity, and including a random intercept for each respondent.
 
 *Note: NHANES has sampling weights associated with each respondent. However, in our analysis, we treate each respondent as i.i.d. data, ignoring the sampling weights. *
 
@@ -108,9 +108,9 @@ Predictors were the selected based on the multicollinearity inspection results.
 
 We used both days' data to then fit a linear mixed model, including a random intercept for each respondent. 
 
-8. Predicted total calories intake at population means 
+8. Predicted total calorie intake at population means 
 
-We provided predicted total calories intake by diabetes and gender status when continuous covariates are held at population means. 
+We provided predicted total calorie intake by diabetes and gender status when continuous covariates are held at population means. 
 
 
 ### Software/tools
@@ -120,7 +120,7 @@ The data preparation, model checking and model fitting were performed parallel i
 Language = c("R", "SAS", "Python")
 Version = c("3.6.0", "9.4", "3.6")
 LMM = c("lme4", "proc mixed", "statsmodels")
-Others = c("foreign, tidyr, plyr, dplyr, corrplot, ggplot2, ggpredict", "proc reg", "pandas, dfply, scipy, matplotlib")
+Others = c("foreign, tidyr, plyr, dplyr, corrplot, ggplot2, ggpredict", "proc reg", "pandas, dfply, scipy, matplotlib, patsy")
 
 tools = tibble(Language = Language, 
                Version = Version, 
@@ -141,7 +141,7 @@ tools %>%
 ```{r setup_r, include=FALSE}
 ## Group project - R
 ##
-## Question: Do people diagnosed with diabetes consume less calories in the US?
+## Question: Do people diagnosed with diabetes consume fewer calories in the US?
 ##
 ## Author: Bei An (anbei@umich.edu)
 ## Updated: Dec 11, 2019
@@ -157,7 +157,7 @@ library(lme4)
 library(ggplot2)
 library(ggeffects)
 ```
-**Question: Do people diagnosed with diabetes consume less calories in the US?**
+**Question: Do people diagnosed with diabetes consume fewer calories in the US?**
 
 ```{r, warning=FALSE}
 DEMO = read.xport("./Data/DEMO_I.XPT")
@@ -326,7 +326,7 @@ plot(me, dodge = 0)
 * Group Project - Group 3													   ;
 *------------------------------------------------------------------------------;
 * This script analyzes the question:										   ;
-* 	"Do people diagnosed with diabetes consume less calories in US?"		   ;
+* 	"Do people diagnosed with diabetes consume fewer calories in US?"		   ;
 * NHANES 2015-2016 data are used in this problem. 							   ;
 * The script has following parts to complete the task:						   ;
 * A. Merge source data														   ;
@@ -680,12 +680,19 @@ run;
 
 ### Python 
 
+
+
+
 #### Stats 506, Fall 2019
-#### Group Project - Group 3
+##### Group Project - Group 3
+
+**Author: Wenjing Li**
+
+**Date: Dec.11, 2019**
 
  This script analyzes the question:
  
-**"Do people diagnosed with diabetes consume less calories in US?"**
+**"Do people diagnosed with diabetes consume fewer calories in US?"**
 
 NHANES 2015-2016 data are used in this problem.
 
@@ -756,18 +763,15 @@ merge_2 = pd.merge(bmx_new, questionnaire, on='SEQN', how='outer')
 merge_3 = pd.merge(merge_2, demo_new, on='SEQN', how='outer')
 ```
 
-##### Inclusion/Exclusion
+###### Inclusion/Exclusion
 
 Include data with confirmed diabetes diagnosis
 
 
 ```python
-# Better to specify the values we want to include, instead of exclusion
-# in case there is missing - but okay in this analysis
+# Diabetes yes/no/borderline
 diabetes_in = [1, 2, 3]
 merge_3 = merge_3[merge_3.DIQ010.isin(diabetes_in)]
-#merge_3 = merge_3[merge_3.DIQ010 != 7 ]
-#merge_3 = merge_3[merge_3.DIQ010 != 9 ]
 ```
 
 Exclude pregnant participants
@@ -801,7 +805,7 @@ merge_3.shape
 
 
 
-##### Variable recoding/creation
+###### Variable recoding/creation
 
 Binary **diabetes** variable:
 
@@ -860,7 +864,7 @@ for i in merge.day:
 merge['day'] = days
 ```
 
-##### Prepare final working datasets
+###### Prepare final working datasets
 
 
 ```python
@@ -908,7 +912,7 @@ final_day2.shape
 
 
 
-##### Check normality of response variable
+###### Check normality of response variable
 
 Day 1 Total Energy (kcal)
 
@@ -933,12 +937,12 @@ plt.show()
 ```
 
 
-![png](Python/Figs/hist_day2.png)
+![png](Python/Figs/hist_day1.png)
 
 
 **Conclusion**: Approximately normal - no need to transform the response variable.
 
-##### Check collinearity (use day 1 only)
+###### Check collinearity (use day 1 only)
 
 Correlation matrix of predictors
 
@@ -1038,8 +1042,8 @@ print(results.summary())
     Dep. Variable:                      y   R-squared:                       0.095
     Model:                            OLS   Adj. R-squared:                  0.094
     Method:                 Least Squares   F-statistic:                     120.7
-    Date:                Tue, 10 Dec 2019   Prob (F-statistic):          8.08e-122
-    Time:                        10:48:47   Log-Likelihood:                -47383.
+    Date:                Wed, 11 Dec 2019   Prob (F-statistic):          8.08e-122
+    Time:                        21:55:47   Log-Likelihood:                -47383.
     No. Observations:                5752   AIC:                         9.478e+04
     Df Residuals:                    5746   BIC:                         9.482e+04
     Df Model:                           5                                         
@@ -1091,7 +1095,7 @@ vif[1:] # No need to look at VIF for intercept
 
 **Conclusion**: No collinearity issue.
 
-##### Linear mixed model for both days
+###### Linear mixed model for both days
 
 
 ```python
@@ -1124,12 +1128,48 @@ print(mixed_fit.summary())
     
 
 
+Prediction at population mean, by diabetes and gender
+
 
 ```python
-#mixed_fit.random_effects
+# prediction for person who has diabetes
+diabetes = 1
+## for man
+male = 1
+pre_1 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+## for woman
+male = 0
+pre_2 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+
+# prediction for person who doesn't have diabetes
+diabetes = 0
+## for man
+male = 1
+pre_3 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
+## for woman
+male = 0
+pre_4 = 1808.464+2.314*mean(final['BMXBMI'])-0.030*mean(final['PAD680'])-2.500*mean(final['RIDAGEYR'])- \
+        101.157*diabetes+538.477*male
 ```
 
-Marginal effect
+
+```python
+print('In the population mean, the estimated calorie intake for men diagnosed with diabetes is :', round(pre_1, 2),'\n' \
+      'In the population mean, the estimated calorie intake for women diagnosed with diabetes is :', round(pre_2, 2),'\n' \
+      'In the population mean, the estimated calorie intake for men without diabetes is :', round(pre_3, 2),'\n' \
+      'In the population mean, the estimated calorie intake for women without diabetes is :', round(pre_4, 2),'\n' \
+     )
+```
+
+    In the population mean, the estimated calorie intake for men diagnosed with diabetes is : 2194.44 
+    In the population mean, the estimated calorie intake for women diagnosed with diabetes is : 1655.97 
+    In the population mean, the estimated calorie intake for men without diabetes is : 2295.6 
+    In the population mean, the estimated calorie intake for women without diabetes is : 1757.12 
+    
+
 
 
 
@@ -1160,7 +1200,7 @@ lmm_summary$coefficients %>%
   kable_styling("hover", full_width = FALSE)
 ```
 
-Our LMM showed that the predictor variables of interest are all statistically significant at level of 0.05, except BMI, suggesting that these predictors, including diabetes status, have a significant effect on the predicting the response variable - total daily consumption of calories. An individual with diabetes is predicted to consume 101 less calories compared to a non-diabetes individual, while other covariate are held the same. 
+Our LMM showed that the predictor variables of interest are all statistically significant at level of 0.05, except BMI, suggesting that these predictors, including diabetes status, have a significant effect on predicting the response variable - total daily consumption of calories. An individual with diabetes is predicted to consume 101 fewer calories compared to a non-diabetes individual, while other covariates are held the same. 
 
 
 ### Covariance component
@@ -1185,9 +1225,9 @@ VarCorr(model2) %>%
 
 Marginal effect measures how the response variable changes when a specific predictor changes, while other covariates are assumed to be held constant. 
 
-We used a continuous response variable in our LMM model, therefore, the marginal effects are equal to the beta coefficients we obtained from the model summary. Marginal effects for continuous covariates measure the instantaneous rate of change, i.e. an approximation of the amount of change in total calories intake produced by one-unit change in age/BMI/Sedentary activity in our model. With binary covariates (diabetes and male in our model) measure discreate change, i.e. how many total calories consumption change as the diabetes status changes no to yes, or gender changes from female to male. 
+We used a continuous response variable in our LMM model, therefore, the marginal effects are equal to the beta coefficients we obtained from the model summary. Marginal effects for continuous covariates measure the instantaneous rate of change, i.e. an approximation of the amount of change in total calorie intake produced by one-unit change in age/BMI/Sedentary activity in our model. Marginal effects for binary covariates (diabetes and male in our model) measure discreate change, i.e. how many total calorie consumption change as the diabetes status changes no to yes, or gender changes from female to male. 
 
-Since marginal effects for discrete variables are more meaningful, and we are interested in the effect of diabetes on total calories intake, we present predicted total calories intake by diabetes status and gender. 
+Since marginal effects for discrete variables are more meaningful, and we are interested in the effect of diabetes on total calorie intake, we present predicted total calorie intake by diabetes status and gender. 
 
 First, we present the population means of the continuous covariates:
 ```{r, echo = FALSE}
@@ -1224,27 +1264,53 @@ tibble(diabetes = c("Non-diabetes", "Non-diabetes", "Diabetes", "Diabetes"),
   mutate(pred = sprintf("%.2f (%.2f, %.2f)", pred_kcal, lci, uci)) %>% 
   select(diabetes, male, pred) %>% 
   pivot_wider(id_cols = diabetes, names_from = male, values_from = pred) %>% 
-  mutate(`Predicted Total Calories (95% CI)` = diabetes) %>% 
-  select(`Predicted Total Calories (95% CI)`, Female, Male) %>% 
+  mutate(`Diabetes Status` = diabetes) %>% 
+  select(`Diabetes Status`, Female, Male) %>% 
   kable(cap = cap4, align = "lcc") %>% 
-  kable_styling("hover", full_width = FALSE)
+  kable_styling("hover", full_width = FALSE) %>% 
+  column_spec(1, bold = TRUE)
   
 # Figure
 plot(me, dodge = 0)
 ```
 
 
-**Conclusion: People diagnosed with diabetes consume less (~101 kcal) calories in the U.S. compared to non-diabetes individuals, if controlled for gender, age, BMI and sedentary activity.**  
+**Conclusion: People diagnosed with diabetes consume fewer (~101 kcal) calories in the U.S. compared to non-diabetes individuals, if controlled for gender, age, BMI and sedentary activity.**  
 
-Our conclusion indicates that diabetic individuals in the U.S generally follow the guideline to reduce their calories consumption, while taking age, gender, BMI and sedentary activity into account. Further analyses could be done by controlling for more potential confounders and bring in sampling weights to better estimate the U.S. population distribution. 
+Our conclusion indicates that diabetic individuals in the U.S generally follow the guideline to reduce their calorie consumption, while taking age, gender, BMI and sedentary activity into account. Further analyses could be done by controlling for more potential confounders and bring in sampling weights to better estimate the U.S. population distribution. 
+
 
 
 ## Discussion  
 
-1. Multicollinearity warning in Python
+### Multicollinearity warning
+
+We found an interesting warning message in Python analysis section, when we were examining multicollinearity by fitting a simple linear regression on day 1 data only.
 
 
-2. Marginal Effect at the Mean difference
+*Warnings:*
+
+    *[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.*
+    
+    *<mark style="background-color: yellow">[2] The condition number is large, 4.59e+03. This might indicate that there are strong multicollinearity or other numerical problems.</mark>*
+
+This is in contrast to the conclusion in R and SAS analysis sections. The correlation matrix, VIFs and eigenvalues/condition numbers inspection all agree with each other that no multicollinearity issue is found. Our Python analysis gave the same correlation matrix and VIFs as those where done in R and SAS. Therefore, we suspect Python package `statsmodels` uses a different strategy to obtain condition numbers. Interestingly, we found a similar [question](https://stats.stackexchange.com/questions/243000/cause-of-a-high-condition-number-in-a-python-statsmodels-regression) raised on StackExchange. There are also two open issesue ([#553](https://github.com/statsmodels/statsmodels/issues/553) and [#2378](https://github.com/statsmodels/statsmodels/issues/2378)) on statsmodels' Github page. It seems that `statsmodels` report condition number as a ratio of largest to smallest eigenvalue, rather than one condition index for one eigenvalue reported by R or SAS. Hence, the high condition number may be due to scaling, not a true indicator of multicollinearity.  
+
+
+### Difference in Prediction
+
+Another interesting finding in our report is the difference in prediction of total calorie intake between R `ggpredict` function and SAS `lsmeans` in `proc mixed`. We intended to predict the total calorie intake by diabetes status and gender, while holding other continuous covariates at population means. We did not find a good tool to generate this prediction together with standard error/confidence interval automatically in Python, other than manual calcualtion. Hence, we only report findings from R and SAS, and used Python manual calculation as a verification. We have summarised our explanation below: 
+
+Both methods gave the same population means (as shown in Table 3) for age, BMI and sedentary activity. The difference is that:
+
+R `ggpredict` then predicts the total calorie intake for the 4 scenarios by taking diabetes and gender into account together, i.e. predict the total calorie intake when a. non-diabetes (diabetes = 0), female (male = 0), b. non-diabetes (diabetes = 0), male (male = 1), c. diabetes (diabetes = 1), female (male = 0), and d. diabetes (diabetes = 1), male (male = 1). We used the same strategy and manually calculated the prediction in Python to verify the results. 
+
+SAS `lsmeans` predicts the total calorie intake for the 4 scenarios by counting for diabetes or gender separately over a balanced population, i.e. predict the total calorie intake when a. non-diabetes (diabetes = 0) with half female and half male, b. diabetes (diabetes = 1) with half female and half male, c. female (male = 0) with half diabetes and half non-diabetes, and d. male (male = 1) with half diabetes and half non-diabetes. 
+
+While it is close to truth that the gender distribution is balanced, it is unreasonable to assume balanced diabetes status in the population. Hence, we decide to report R `ggpredict` results in our Table 4. 
+
+
+**Thoughts**: Based on two discussions we have above, in our example, R and SAS appear to be more powerful tools in statistical analysis than Python. It's likely because Python was developed for general-purpose, while both R and SAS were developed specifically for statistical computing. 
 
 
 
